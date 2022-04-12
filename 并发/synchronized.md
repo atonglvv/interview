@@ -16,3 +16,13 @@
 
 # 轻量级锁-重量级锁的过程？以及自适应自旋的理解
 
+
+
+# synchronized和lock的区别
+
+- lock是一个接口，synchronized是一个关键字，synchronized是内置的语言实现
+- synchronized在发生异常时候会自动释放锁，不会出现死锁；lock发生异常时候，不会主动释放锁，必须手动unlock来释放锁。
+- lock更加灵活，比如可以中断等待，trylock知道有没有获取锁，还可以实现读写分离（readwritelock）
+
+
+

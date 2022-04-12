@@ -29,10 +29,29 @@
 3. **`threadFactory`** :executor 创建新线程的时候会用到。
 4. **`handler`** :拒绝策略。
 
-# ThreadPoolExecutor的拒绝策略
+# ThreadPoolExecutor的拒绝策略(饱和策略)
 
 - **`ThreadPoolExecutor.AbortPolicy`** ：抛出 `RejectedExecutionException`来拒绝新任务的处理。
 - **`ThreadPoolExecutor.CallerRunsPolicy`** ：谁调用谁执行，由发起者线程执行，也就是直接在调用`execute`方法的线程中运行(`run`)被拒绝的任务，如果执行程序已关闭，则会丢弃该任务。因此这种策略会降低对于新任务提交速度，影响程序的整体性能。如果您的应用程序可以承受此延迟并且你要求任何一个任务请求都要被执行的话，你可以选择这个策略。
 - **`ThreadPoolExecutor.DiscardPolicy`** ：不处理新任务，直接丢弃掉。不抛异常。
 - **`ThreadPoolExecutor.DiscardOldestPolicy`** ： 丢弃最早的未处理的任务请求。
+
+
+
+# 为什么建议使用`ThreadPoolExecutor` 声明线程池？而不是**`Executors`** ？
+
+Executors 返回线程池对象的弊端如下：
+
+- **FixedThreadPool**和 **SingleThreadExecutor** ： 允许请求的队列长度为 Integer.MAX_VALUE,可能堆积大量的请求，从而导致 OOM。
+- **CachedThreadPool 和 ScheduledThreadPool** ： 允许创建的线程数量为 `Integer.MAX_VALUE` ，可能会创建大量线程，从而导致 OOM。
+
+
+
+# 如何确认合适的线程数量？
+
+如果是CPU密集型应用，则线程池大小设置为N+1 （N为CPU总核数）
+
+如果是IO密集型应用，则线程池大小设置为2N+1 （N为CPU总核数）
+
+# 线程池场景
 
