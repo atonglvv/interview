@@ -28,7 +28,7 @@ cglib生成代理对象，通过字节码生成被代理对象的子类，并且
 
 # Spring Bean 如果有两个有参构造方法，可以成功创建Bean么？
 
-不可以。除非在某个构造方法上添加@Autowired。
+不可以。除非在某个构造方法上添加**@Autowired**。
 
 如果只有一个构造方法是可以成功创建bean。
 
@@ -36,7 +36,15 @@ cglib生成代理对象，通过字节码生成被代理对象的子类，并且
 
 如果多个有参构造，没有无参构造，则会报错。可以在构造方法上添加@Autowired，告诉spring用哪个构造方法创建bean。
 
+# Autowired 怎么从IOC中获取Bean？
+
+先byType，后byName。
+
 # PopulateBean？
+
+# 考虑一个问题，A Bean被代理，A Bean依赖于B Bean，直接从IOC get A Bean，获取的A Bean 的属性B有值么？
+
+没有， 此时A中的B为null。
 
 # 填充Bean的属性环节的循环依赖问题
 
