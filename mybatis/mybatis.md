@@ -58,9 +58,37 @@ collection：处理一对多映射关系
 
 ## trim
 
-prefix：表示在trim标签包裹的部分的前面添加内容
+prefix：表示在trim标签包裹的部分的前面添加内容（拼接前缀）。
 
-suffix：表示在trim标签包裹的部分的后面添加内容
+suffix：表示在trim标签包裹的部分的后面添加内容（拼接后缀）。
+
+prefixOverrides：去除sql语句前面的关键字或者字符，该关键字或者字符由prefixOverrides属性指定，假设该属性指定为"and"，当sql语句的开头为"and"，trim标签将会去除该"and"。
+
+suffixOverrides：去除sql语句后面的关键字或者字符，该关键字或者字符由suffixOverrides属性指定。
+
+
+
+# Mybatis的缓存
+
+## Mybatis的一级缓存
+
+默认开启。
+
+SqlSession级别。
+
+### 如何清空一级缓存？
+
+```java
+sqlSession.clearCache();
+```
+
+## Mybatis的二级缓存
+
+SqlSessionFactory级别。
+
+
+
+
 
 
 
