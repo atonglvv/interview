@@ -2,13 +2,15 @@
 
 ## 优点
 
-和spring无缝整合
+和spring无缝整合。
 
-全面权限控制
+全面权限控制。
+
+资源社区活跃，丰富。
 
 ## 缺点
 
-重量级
+重量级。
 
 
 
@@ -16,11 +18,11 @@
 
 本质是一个过滤器链。
 
-FilterSecurityInterceptor。
+UsernamePasswordAuthenticationFilter。（认证）
 
-ExceptionTranslationFilter。
+ExceptionTranslationFilter。（异常处理）
 
-UsernamePasswordAuthenticationFilter。
+FilterSecurityInterceptor。（鉴权，从SecurityContextHolder获取Authentication，获取权限信息判断是否拥有访问当前资源所需的权限）
 
 # spring security 是如何加载的？
 
@@ -92,9 +94,44 @@ http.exceptionHandling().accessDeniedPage("/xxx. html");
 
 
 
+# 统一认证授权异常处理
+
+认证异常：AuthenticationEntryPoint（实现该接口）
+
+授权异常：AccessDeniedHandler（实现该接口）
+
+
+
+```java
+//配置异常处理器
+http.exceptionHandling()
+	//配置认证失败处理器
+	.authenticationEntryPoint(authenticationEntryPoint)
+	.accessDeniedHandler(accessDeniedHandler);
+```
+
+
+
+# spring security 允许跨域
+
+```java
+//允许跨域
+http.cors();
+```
+
+
+
+# 如何自定义权限校验方法？
+
+```java
+@PreAuthorize("@beanName.methodName(arg)")
+```
+
+
+
 # 什么是CSRF（cross-site request forgery）？
 
-CsrfFilter
+CSRF是指跨站请求伪造(Cross-site request forgery)，是web常见的攻击之一。
 
 
 
