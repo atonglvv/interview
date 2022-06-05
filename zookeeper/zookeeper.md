@@ -1,4 +1,6 @@
 > [Java Guide](https://javaguide.cn/distributed-system/distributed-process-coordination/zookeeper/zookeeper-intro.html#_1-%E5%89%8D%E8%A8%80)
+>
+> [菜鸟教程](https://www.runoob.com/w3cnote/zookeeper-locks.html)
 
 # zookeeper是什么？
 
@@ -189,12 +191,6 @@ ZooKeeper 的过半机制导致不可能产生 2 个 leader，因为少于等于
 # ZAB 协议和 Paxos 算法
 
 ZooKeeper 并没有完全采用 Paxos 算法 ，而是使用 ZAB 协议作为其保证数据一致性的核心算法。另外，在 ZooKeeper 的官方文档中也指出，ZAB 协议并不像 Paxos 算法那样是一种通用的分布式一致性算法，ZAB是一种特别为 Zookeeper 设计的崩溃可恢复的原子消息广播算法。
-
-
-
-
-
-
 
 
 
