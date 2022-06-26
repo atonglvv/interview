@@ -32,11 +32,29 @@ Entry 是 ThreadLocalMap 的静态内部类。Entry 的key 是ThreadLocal 类型
 
 关系图如下：
 
-![image-20210918145254131](C:\Users\carver\AppData\Roaming\Typora\typora-user-images\image-20210918145254131.png)
+![关系图](\关系图.jpg)
 
 
 
-## ThreadLocal 应用
+
+
+# ThreadLocalMap 是如何解决hash冲突的？
+
+线性探测
+
+
+
+# Entry的key为什么存ThreadLocal的弱引用？
+
+# Entry的value不是弱引用对象，如果其key回收了，value没回收会造成什么问题？如何避免？
+
+尽量避免大对象的value。
+
+
+
+# ThreadLocal 应用
+
+数据库事务的保证
 
 
 
