@@ -6,6 +6,85 @@ ThreadLocal的作用主要是做数据隔离，填充的数据只属于当前线
 
 # ThreadLocal Demo
 
+一个小Demo，From ThreadLocal 源码注释。来说明线程间的数据隔离。
+
+```java
+import java.util.concurrent.atomic.AtomicInteger;
+
+/**
+ * @program: Draft
+ * @description: ThreadLocal 源码注释Demo
+ * @author: atong
+ * @create: 2022-06-27 16:22
+ */
+public class ThreadId {
+    // Atomic integer containing the next thread ID to be assigned
+    private static final AtomicInteger nextId = new AtomicInteger(0);
+
+    // Thread local variable containing each thread's ID
+    private static final ThreadLocal<Integer> threadId =
+            new ThreadLocal<Integer>() {
+                @Override protected Integer initialValue() {
+                    return nextId.getAndIncrement();
+                }
+            };
+
+    private static final ThreadLocal<Integer> THREAD_LOCAL = new ThreadLocal<>();
+
+    // Returns the current thread's unique ID, assigning it if necessary
+    public static int get() {
+        return threadId.get();
+    }
+
+    public static void add() {
+        threadId.set(threadId.get() + 1);
+    }
+
+    public static void remove() {
+        threadId.remove();
+    }
+
+    public static void incrementSameThreadId(int loop) {
+        try {
+            for (int i = 0; i < loop; i++) {
+                ThreadId.add();
+                System.out.println(Thread.currentThread() + "_" + i + ", threadId: " + ThreadId.get());
+            }
+        } finally {
+            ThreadId.remove();
+        }
+    }
+
+    public static void main(String[] args) {
+        incrementSameThreadId(3);
+        new Thread(() -> ThreadId.incrementSameThreadId(2)).start();
+        new Thread(() -> ThreadId.incrementSameThreadId(5)).start();
+    }
+}
+```
+
+## 可优化的地方
+
+在给ThreadLocal赋初始值的那块代码可优化如下：
+
+```java
+    // Thread local variable containing each thread's ID
+    private static final ThreadLocal<Integer> threadId =
+            new ThreadLocal<Integer>() {
+                @Override protected Integer initialValue() {
+                    return nextId.getAndIncrement();
+                }
+            };
+```
+
+可优化为 **withInitial** ：
+
+```java
+    // Thread local variable containing each thread's ID
+    private static final ThreadLocal<Integer> threadId =
+            ThreadLocal.withInitial(nextId::getAndIncrement);
+```
+
 # Thread 与 ThreadLocal
 
 **ThreadLocal 是线程 Thread 中属性 threadLocals 的管理者。**
@@ -132,7 +211,7 @@ public class Thread implements Runnable {
 
 # ThreadLocal源码分析
 
-三个成员变量
+**三个成员变量**
 
 ```java
 public class ThreadLocal<T> {
@@ -190,6 +269,10 @@ public class ThreadLocal<T> {
 
 # 八股文
 
+## ThreadLocalMap的数据结构
+
+
+
 ## Thread 与 ThreadLocal 与 ThreadLocalMap 与 Entry之间的关系
 
 Thread类下有两个ThreadLocalMap成员变量，如下：
@@ -218,7 +301,15 @@ Entry 是 ThreadLocalMap 的静态内部类。Entry 的key 是ThreadLocal 类型
 
 线性探测
 
-## Entry的key为什么存ThreadLocal的弱引用？
+## Entry的key为什么存ThreadLocal的弱引用？同下
+
+## 为什么Entry需要继承WeakReference<>? 同上
+
+## 了解ThreadLocal的内存泄漏问题么？
+
+## ThreadLocal为什么最后都要remove？
+
+如果用线程池的话，会存在ThreadLocal复用问题。所以一定要记得用完remove。
 
 ## Entry的value不是弱引用对象，如果其key回收了，value没回收会造成什么问题？如何避免？
 
