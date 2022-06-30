@@ -277,6 +277,27 @@ public class ThreadLocal<T> {
     }
 ```
 
+## setInitialValue
+
+```java
+    /**
+     * Variant of set() to establish initialValue. Used instead
+     * of set() in case user has overridden the set() method.
+     *
+     * @return the initial value
+     */
+    private T setInitialValue() {
+        T value = initialValue();
+        Thread t = Thread.currentThread();
+        ThreadLocalMap map = getMap(t);
+        if (map != null)
+            map.set(this, value);
+        else
+            createMap(t, value);
+        return value;
+    }
+```
+
 ## set
 
 ```java
@@ -337,6 +358,7 @@ public class ThreadLocal<T> {
         Thread t = Thread.currentThread();
         ThreadLocalMap map = getMap(t);
         if (map != null) {
+            // ThreadLocalMap的key就是当前ThreadLocal对象实例
             ThreadLocalMap.Entry e = map.getEntry(this);
             if (e != null) {
                 @SuppressWarnings("unchecked")
@@ -344,6 +366,7 @@ public class ThreadLocal<T> {
                 return result;
             }
         }
+        // 如果map没有初始化，那么在这里初始化一下
         return setInitialValue();
     }
 
@@ -526,6 +549,17 @@ public class ThreadLocal<T> {
         }
 ```
 
+### nextIndex
+
+```java
+		/**
+         * Increment i modulo len.
+         */
+        private static int nextIndex(int i, int len) {
+            return ((i + 1 < len) ? i + 1 : 0);
+        }
+```
+
 ### set
 
 ```java
@@ -545,14 +579,17 @@ public class ThreadLocal<T> {
 
             Entry[] tab = table;
             int len = tab.length;
+            // 根据key计算index
             int i = key.threadLocalHashCode & (len-1);
-
+			
+            // 如果index下Entry不为空
             for (Entry e = tab[i];
                  e != null;
                  e = tab[i = nextIndex(i, len)]) {
                 ThreadLocal<?> k = e.get();
 
                 if (k == key) {
+                    // 覆盖之前的value值
                     e.value = value;
                     return;
                 }
@@ -568,15 +605,225 @@ public class ThreadLocal<T> {
             if (!cleanSomeSlots(i, sz) && sz >= threshold)
                 rehash();
         }
+
+
+        /**
+         * Replace a stale entry encountered during a set operation
+         * with an entry for the specified key.  The value passed in
+         * the value parameter is stored in the entry, whether or not
+         * an entry already exists for the specified key.
+         *
+         * As a side effect, this method expunges all stale entries in the
+         * "run" containing the stale entry.  (A run is a sequence of entries
+         * between two null slots.)
+         *
+         * @param  key the key
+         * @param  value the value to be associated with key
+         * @param  staleSlot index of the first stale entry encountered while
+         *         searching for key.
+         */
+        private void replaceStaleEntry(ThreadLocal<?> key, Object value,
+                                       int staleSlot) {
+            Entry[] tab = table;
+            int len = tab.length;
+            Entry e;
+
+            // Back up to check for prior stale entry in current run.
+            // We clean out whole runs at a time to avoid continual
+            // incremental rehashing due to garbage collector freeing
+            // up refs in bunches (i.e., whenever the collector runs).
+            int slotToExpunge = staleSlot;
+            for (int i = prevIndex(staleSlot, len);
+                 (e = tab[i]) != null;
+                 i = prevIndex(i, len))
+                if (e.get() == null)
+                    slotToExpunge = i;
+
+            // Find either the key or trailing null slot of run, whichever
+            // occurs first
+            for (int i = nextIndex(staleSlot, len);
+                 (e = tab[i]) != null;
+                 i = nextIndex(i, len)) {
+                ThreadLocal<?> k = e.get();
+
+                // If we find key, then we need to swap it
+                // with the stale entry to maintain hash table order.
+                // The newly stale slot, or any other stale slot
+                // encountered above it, can then be sent to expungeStaleEntry
+                // to remove or rehash all of the other entries in run.
+                if (k == key) {
+                    e.value = value;
+
+                    tab[i] = tab[staleSlot];
+                    tab[staleSlot] = e;
+
+                    // Start expunge at preceding stale entry if it exists
+                    if (slotToExpunge == staleSlot)
+                        slotToExpunge = i;
+                    cleanSomeSlots(expungeStaleEntry(slotToExpunge), len);
+                    return;
+                }
+
+                // If we didn't find stale entry on backward scan, the
+                // first stale entry seen while scanning for key is the
+                // first still present in the run.
+                if (k == null && slotToExpunge == staleSlot)
+                    slotToExpunge = i;
+            }
+
+            // If key not found, put new entry in stale slot
+            tab[staleSlot].value = null;
+            tab[staleSlot] = new Entry(key, value);
+
+            // If there are any other stale entries in run, expunge them
+            if (slotToExpunge != staleSlot)
+                cleanSomeSlots(expungeStaleEntry(slotToExpunge), len);
+        }
+
 ```
 
+### getEntry
 
+```java
+        /**
+         * Get the entry associated with key.  This method
+         * itself handles only the fast path: a direct hit of existing
+         * key. It otherwise relays to getEntryAfterMiss.  This is
+         * designed to maximize performance for direct hits, in part
+         * by making this method readily inlinable.
+         *
+         * @param  key the thread local object
+         * @return the entry associated with key, or null if no such
+         */
+        private Entry getEntry(ThreadLocal<?> key) {
+            int i = key.threadLocalHashCode & (table.length - 1);
+            Entry e = table[i];
+            if (e != null && e.get() == key)
+                return e;
+            else
+                return getEntryAfterMiss(key, i, e);
+        }
+
+        /**
+         * Version of getEntry method for use when key is not found in
+         * its direct hash slot.
+         *
+         * @param  key the thread local object
+         * @param  i the table index for key's hash code
+         * @param  e the entry at table[i]
+         * @return the entry associated with key, or null if no such
+         */
+        private Entry getEntryAfterMiss(ThreadLocal<?> key, int i, Entry e) {
+            Entry[] tab = table;
+            int len = tab.length;
+
+            while (e != null) {
+                ThreadLocal<?> k = e.get();
+                if (k == key)
+                    return e;
+                if (k == null)
+                    // key 已经被回收.entry无效
+                    expungeStaleEntry(i);
+                else
+                    i = nextIndex(i, len);
+                e = tab[i];
+            }
+            return null;
+        }
+
+        /**
+         * Expunge a stale entry by rehashing any possibly colliding entries
+         * lying between staleSlot and the next null slot.  This also expunges
+         * any other stale entries encountered before the trailing null.  See
+         * Knuth, Section 6.4
+         *
+         * @param staleSlot index of slot known to have null key
+         * @return the index of the next null slot after staleSlot
+         * (all between staleSlot and this slot will have been checked
+         * for expunging).
+         * 删除没用的 entry
+         */
+        private int expungeStaleEntry(int staleSlot) {
+            Entry[] tab = table;
+            int len = tab.length;
+
+            // expunge entry at staleSlot
+            tab[staleSlot].value = null;
+            tab[staleSlot] = null;
+            size--;
+
+            // Rehash until we encounter null
+            Entry e;
+            int i;
+            for (i = nextIndex(staleSlot, len);
+                 (e = tab[i]) != null;
+                 i = nextIndex(i, len)) {
+                ThreadLocal<?> k = e.get();
+                if (k == null) {
+                    e.value = null;
+                    tab[i] = null;
+                    size--;
+                } else {
+                    int h = k.threadLocalHashCode & (len - 1);
+                    if (h != i) {
+                        tab[i] = null;
+
+                        // Unlike Knuth 6.4 Algorithm R, we must scan until
+                        // null because multiple entries could have been stale.
+                        while (tab[h] != null)
+                            h = nextIndex(h, len);
+                        tab[h] = e;
+                    }
+                }
+            }
+            return i;
+        }
+
+```
+
+# InheritableThreadLocal
+
+在实际开发过程中，我们可能会遇到这么一种场景。
+
+主线程开了一个子线程，但是我们希望在子线程中可以访问主线程中的ThreadLocal对象，也就是说有些数据需要进行父子线程间的传递。比如像这样：
+
+```java
+public static void main(String[] args) {
+    ThreadLocal threadLocal = new ThreadLocal();
+    IntStream.range(0,10).forEach(i -> {
+        // 每个线程的序列号，希望在子线程中能够拿到
+        threadLocal.set(i);
+        // 这里来了一个子线程，我们希望可以访问上面的threadLocal
+        new Thread(() -> {
+            System.out.println(Thread.currentThread().getName() + ":" + threadLocal.get());
+        }).start();
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    });
+}
+```
+
+如果我们希望子线可以看到父线程的ThreadLocal，那么就可以使用InheritableThreadLocal。顾名思义，这就是一个支持线程间父子继承的ThreadLocal，将上述
+
+代码中的 ThreadLocal 使用 InheritableThreadLocal ：
+
+```java
+InheritableThreadLocal threadLocal = new InheritableThreadLocal();
+```
+
+虽然InheritableThreadLocal看起来挺方便的，但是依然要注意以下几点：
+
+- 变量的传递是发生在线程创建的时候，如果不是新建线程，而是用了线程池里的线程，就不灵了。
+- 变量的赋值就是从主线程的map复制到子线程，它们的value是同一个对象，如果这个对象本身不是线程安全的，那么就会有线程安全问题。
 
 # 八股文
 
 ## ThreadLocalMap的数据结构
 
-
+就是一个数组。
 
 ## Thread 与 ThreadLocal 与 ThreadLocalMap 与 Entry之间的关系
 
@@ -612,21 +859,27 @@ Entry 是 ThreadLocalMap 的静态内部类。Entry 的key 是ThreadLocal 类型
 
 但实际情况中，一个线程中很有可能不只使用了一个ThreadLocal对象。这时使用`Thread`做key就会有问题了。
 
-## Entry的key为什么存ThreadLocal的弱引用？同下
+## Entry的key为什么存ThreadLocal的弱引用？
 
-## 为什么Entry需要继承WeakReference<>? 同上
+这样设计的好处是，如果这个变量不再被其他对象使用时，可以自动回收这个ThreadLocal对象，避免可能的内存泄露（注意，Entry中的value，依然是强引用）。
 
-## 了解ThreadLocal的内存泄漏问题么？
+## 了解ThreadLocal的内存泄漏问题么？（value内存泄漏）
 
-## ThreadLocal为什么最后都要remove？
+虽然ThreadLocalMap中的key是弱引用，当不存在外部强引用的时候，就会自动被回收，但是Entry中的value依然是强引用。如下图：
 
-如果用线程池的话，会存在ThreadLocal复用问题。所以一定要记得用完remove。
+![对象引用](\对象引用.jpg)
 
-## Entry的value不是弱引用对象，如果其key回收了，value没回收会造成什么问题？如何避免？
+只有当Thread被回收时，这个value才有被回收的机会，否则，只要线程不退出，value总是会存在一个强引用。但是，对于线程池来说，大部分线程会一直存在在系统的整个生命周期内，那样的话，就会造成value对象出现泄漏的可能。处理的方法是，在ThreadLocalMap调用 set(), get(), remove() 的时候，都要清理无用的value。
 
-尽量避免大对象的value。
+在set()， get()， remove() 方法中，都会直接或者间接调用到**expungeStaleEntry**方法进行value的清理。
 
+但是，ThreadLocal并不能100%保证不发生内存泄漏。
 
+比如，很不幸的，你的get()方法总是访问固定几个一直存在的ThreadLocal，那么清理动作就不会执行，如果你没有机会调用set()和remove()，那么这个内存泄漏依然会发生。
+
+因此，一个良好的习惯依然是：**当你不需要这个ThreadLocal变量时，主动调用remove()，这样对整个系统是有好处的**。
+
+**同时也要尽量避免大对象的value。**
 
 # ThreadLocal 应用场景
 
