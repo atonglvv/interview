@@ -38,3 +38,65 @@
 - "header!=value"：要求请求映射所匹配的请求必须携带header请求头信息且header!=value
 
 若当前请求满足@RequestMapping注解的value和method属性，但是不满足headers属性，此时页面显示404错误，即资源未找到。
+
+## ant
+
+SpringMVC支持ant风格的路径
+
+- ？：表示任意的单个字符
+
+- *：表示任意的0个或多个字符
+
+- **：表示任意的一层或多层目录
+
+注意：在使用 * * 时，只能使用 * * 必须在两个 / 中间
+
+
+
+# @RequestHeader 
+
+@RequestHeader 是获取请求头中的数据，通过指定参数 value 的值来获取请求头中指定的参数值。其他参数用法和 @RequestParam 完全一样。
+
+```java
+@Controller
+public class handleHeader {
+ 
+	@GetMapping("/getHeader")
+	public String getRequestHeader(@RequestHeader("User-Agent") String agent) {
+		System.out.println(agent);
+		return "success";
+	}
+}
+```
+
+
+
+# @cookievalue
+
+用法同  @RequestParam @RequestHeader。
+
+
+
+# RequestEntity
+
+RequestEntity 类型用于获取整个请求报文，包括请求头、请求体等信息。
+
+```java
+@Controller
+public class MyController {
+
+    @RequestMapping(value = {"/hello"})
+    public String hello(RequestEntity<String> requestEntity){
+        HttpHeaders headers = requestEntity.getHeaders();
+        String body = requestEntity.getBody();
+        URI url = requestEntity.getUrl();
+        HttpMethod method = requestEntity.getMethod();
+        System.out.println("请求头：" + headers.toString());
+        System.out.println("请求体：" + body);
+        System.out.println("URL：" + url.toString());
+        System.out.println("请求方法：" + method.toString());
+        return "hello";
+    }
+}
+```
+
