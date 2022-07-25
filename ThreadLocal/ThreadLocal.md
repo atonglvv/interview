@@ -891,3 +891,112 @@ Entry 是 ThreadLocalMap 的静态内部类。Entry 的key 是ThreadLocal 类型
 
 ## SimpleDateFormat 线程安全解决方案
 
+### SimpleDateFormat 线程不安全分析
+
+>  [还在用 SimpleDateFormat 做时间格式化？小心项目崩掉！](https://mp.weixin.qq.com/s/JBDpKpn3efuYQ4ilce7tZw)
+
+`SimpleDateFormat` 继承 `DateFormat` 类，`SimpleDateFormat`转换日期是通过继承自`DateFormat`类的`Calendar`对象来操作的，`Calendar`对象会被用来进行日期-时间计算，既被用于`format`方法也被用于`parse`方法。
+
+#### DateFormat
+
+```java
+public abstract class DateFormat extends Format {
+
+    /**
+     * The {@link Calendar} instance used for calculating the date-time fields
+     * and the instant of time. This field is used for both formatting and
+     * parsing.
+     *
+     * <p>Subclasses should initialize this field to a {@link Calendar}
+     * appropriate for the {@link Locale} associated with this
+     * <code>DateFormat</code>.
+     * @serial
+     */
+    protected Calendar calendar;
+}
+```
+
+#### parse
+
+代码太多了。这里不粘贴复制了。可以自行查看 parse(source, pos)。
+
+`Calendar`对象它并不是线程安全的，如果，a线程将`calendar`清空了，`calendar` 就没有新值了，恰好此时b线程刚好进入到parse方法用到了`calendar`对象，那就会产生线程安全问题了！
+
+```java
+
+    /**
+     * Parses text from the beginning of the given string to produce a date.
+     * The method may not use the entire text of the given string.
+     * <p>
+     * See the {@link #parse(String, ParsePosition)} method for more information
+     * on date parsing.
+     *
+     * @param source A <code>String</code> whose beginning should be parsed.
+     * @return A <code>Date</code> parsed from the string.
+     * @exception ParseException if the beginning of the specified string
+     *            cannot be parsed.
+     */
+    public Date parse(String source) throws ParseException
+    {
+        ParsePosition pos = new ParsePosition(0);
+        Date result = parse(source, pos);
+        if (pos.index == 0)
+            throw new ParseException("Unparseable date: \"" + source + "\"" ,
+                pos.errorIndex);
+        return result;
+    }
+
+
+```
+
+
+
+#### format
+
+在执行 `SimpleDateFormat.format()` 方法时，会使用 `calendar.setTime()` 方法将输入的时间进行转换，那么我们想想一下这样的场景：
+
+- 线程 1 执行了 `calendar.setTime(date)` 方法，将用户输入的时间转换成了后面格式化时所需要的时间；
+- 线程 1 暂停执行，线程 2 得到 CPU 时间片开始执行；
+- 线程 2 执行了 `calendar.setTime(date)` 方法，对时间进行了修改；
+- 线程 2 暂停执行，线程 1 得出 CPU 时间片继续执行，因为线程 1 和线程 2 使用的是同一对象，而时间已经被线程 2 修改了，所以此时当线程 1 继续执行的时候就会出现线程安全的问题了。
+
+### ThreadLocal 解决
+
+```java
+public class SimpleDateFormatThreadLocalDemo {
+
+    private static ThreadLocal<SimpleDateFormat> simpleDateFormat = 
+        ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+
+    public static void main(String[] args) {
+        while (true) {
+            try {
+                new Thread(() -> {
+                    String dateStr = simpleDateFormat.get().format(new Date());
+                    try {
+                        Date parseDate = simpleDateFormat.get().parse(dateStr);
+                        String dateStrCheck = simpleDateFormat.get().format(parseDate);
+                        boolean equals = dateStr.equals(dateStrCheck);
+                        if (!equals) {
+                            System.out.println(equals + " " + dateStr + " " + dateStrCheck);
+                        } else {
+                            System.out.println(equals);
+                        }
+                    } catch (ParseException e) {
+                        System.out.println(e.getMessage());
+                    }
+                }).start();
+            } finally {
+                simpleDateFormat.remove();
+            }
+        }
+    }
+}
+```
+
+
+
+
+
+
+
