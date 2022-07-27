@@ -100,3 +100,25 @@ public class MyController {
 }
 ```
 
+
+
+# ResponseEntity
+
+ResponseEntity 可以作为controller的返回值。
+
+常用于处理文件下载接口。
+
+```java
+@RequestMapping("/download")
+public ResponseEntity<byte[]> download(@RequestParam String fileName) throws IOException {
+    byte[] bytes = xxx;
+    return ResponseEntity.ok()
+        .headers(headers)
+        .body(bytes);
+}
+```
+
+
+
+# 拦截器Interceptor的执行顺序？
+

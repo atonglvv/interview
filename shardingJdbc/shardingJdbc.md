@@ -1,6 +1,4 @@
-
-
-####  1）、sharding-jdbc 简介 ####
+# sharding-jdbc 简介
 
 Sharding-JDBC定位为轻量级Java框架，在Java的JDBC层提供的额外服务，它使用客户端直连数据库，以jar包形式提供服务，无需额外部署和依赖，可理解为增强版的JDBC驱动，完全兼容JDBC和各种ORM框架。是分布式数据中间件Sharding-Sphere中的重要组成部分，
 
@@ -13,11 +11,12 @@ ShardingSphere 已于2020年4月16日成为 Apache 软件基金会的顶级项�
 
 ![](img/shardingJdbcBase.png)
 
-#### 2）、sharding-jdbc能做什么？   ####
+# sharding-jdbc能做什么？
 
 Sharding-JDBC的核心功能为数据分片和读写分离，通过sharding-JDBC，应用可以透明使用jdbc访问已经分库，读写分离的多个数据源，而不用关心数据源的数量以及数据如何分布。
 
 **分库分表的基本概念**
+
 > 什么是分库分表
 >
 - 就是把原本存储于一个库的数据分块存储到多个库上，把原本存储于一个表的数据分块存储到多个表上。
@@ -132,7 +131,7 @@ himt指定分值而不从 SQL 中提取，而是手工设置的方式，不是�
 - **sql解析：通过解析sql语句提取分片键列与值进行分片，例如比较符 =、in、 between and,及查询的表等**
 
 - **sql改写：根据解析结果，及采用的分片逻辑改写sql，上例经过sql改写之后，真实的语句为：**
- 
+
 ![](img/SQL7.png)
 
 - **sql路由：找到sql需要去哪个表执行语句，上例sql根据采用的策略可以得到将在tb_user_0表执行语句。**
@@ -144,7 +143,7 @@ himt指定分值而不从 SQL 中提取，而是手工设置的方式，不是�
 
 **4. sharding-jdbc读写分离  **
 ![](img/duxie.png)
-####  查看配置代码 ####
+# 查看配置代码
 
 **5. Mycat区别  **
 ![](img/kaiYuan.png)
