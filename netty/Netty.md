@@ -1,5 +1,7 @@
 # Netty是什么
 
+Netty是由JBOSS提供的一个Java开源框架，现为Github上的独立项目。
+
 在 `Netty` 官网首页有这样一句话：
 
 ```
@@ -77,6 +79,11 @@ Netty 是基于 JDK NIO 的，相比于 NIO，Netty 做的更多，并且做得�
 - 大数据：`Hbase、Spark、Flink、Storm`。
 - 搜索引擎：`Elasticsearch`。
 - 消息队列：`RocketMQ、ActiveMQ`。
+
+- 网络游戏
+- Akka
+- BookKeeper
+- Pulsar
 
 
 
