@@ -79,21 +79,42 @@ Netty 是基于 JDK NIO 的，相比于 NIO，Netty 做的更多，并且做得�
 - 大数据：`Hbase、Spark、Flink、Storm`。
 - 搜索引擎：`Elasticsearch`。
 - 消息队列：`RocketMQ、ActiveMQ`。
-
+- 数据库：`Cassandra`
 - 网络游戏
 - Akka
 - BookKeeper
 - Pulsar
+- Zookeeper
+
+# Netty架构图
+
+整体分为三部分：
+
+- Core：Netty 的核心。
+
+- Transport：支持的传输协议。
+
+- Protocol Support：支持的应用层协议。
+
+![](img\components.png)
 
 
 
+# 为什么 Netty 仅支持 NIO ？
 
+## 为什么不建议阻塞 IO（`BIO/OIO`）？
 
+连接数高的情况下，也就是高并发情况下，阻塞 -> 耗资源、效率低。
 
+## 为什么删掉已经做好的 `AIO` 支持？
 
+- `Windows` 的 `AIO` 实现成熟，但是很少用来做服务器；-
+-  `Linux` 常常用来做服务器，但是 `AIO` 的实现不成熟；
+- `Linux` 下 `AIO` 相比较 `NIO` 的性能提升不明显。
 
+# NIO 一定优于 BIO 么
 
-
+不一定。`BIO` 代码简单（相对于 `NIO`）。适用于特定场景：连接数少，并发度低，此时 `BIO` 性能不输 `NIO`。
 
 
 
