@@ -25,3 +25,9 @@ http://www.movable-type.co.uk/scripts/gis-faq-5.1.html
 # mysql 实现按经纬度进行距离排序
 
 https://mp.weixin.qq.com/s/iw-j_EIqCiJO_PcG2t6gGQ
+
+
+
+# spatial4j入门实战
+
+https://cloud.tencent.com/developer/article/1902879
