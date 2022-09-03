@@ -187,6 +187,12 @@ docker run <image_name>
 docker run -it --name=<container_name> <image_name>
 ```
 
+## 查看所有容器
+
+```shell
+docker ps -a
+```
+
 ## 列出当前正在运行的容器
 
 ```bash
