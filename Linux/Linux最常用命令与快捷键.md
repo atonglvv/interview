@@ -61,6 +61,22 @@ tail -3 openfire.xml
 
 
 
+# 新建文件夹
+
+```shell
+mkdir <folderName>
+```
+
+
+
+# 解压
+
+```shell
+tar zxvf <FileName.tar.gz>
+```
+
+
+
 
 
 
