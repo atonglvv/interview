@@ -18,8 +18,6 @@ buffer pool 的主要作用就是缓存索引和表数据，以避免每一次�
 
 buffer pool 虽然提高了访问速度，但是增删改的效率并没有因此提升，当涉及到增删改的时候，还是需要磁盘 IO，那么效率一样低。
 
-
-
 为了解决这个问题，MySQL 中引入了 change buffer。change buffer 以前并不叫这个名字，以前叫 insert buffer，即只针对 insert 操作有效，现在改名叫 
 
 change buffer 了，不仅仅针对 insert 有效，对 delete 和 update 操作也是有效的，change buffer 主要是对非唯一的索引有效，如果字段是唯一性索引，那么更
@@ -41,7 +39,7 @@ change buffer 就是说，当我们需要更改数据库中的数据的时候，
 
 MYSQL中事务的原子性和持久性离不开Redo Log。
 
-Redo Log 是存储引擎层（Innodb）的。binlog是Server层的。
+**Redo Log 是存储引擎层（Innodb）的。binlog是Server层的。**
 
 考虑：`mysql`是如何保证持久性的呢？
 
@@ -69,7 +67,7 @@ Redo Log 是存储引擎层（Innodb）的。binlog是Server层的。
 
 在计算机操作系统中，**用户空间**(`user space`)下的缓冲区数据一般情况下是无法直接写入磁盘的，中间必须经过操作系统**内核空间**(`kernel space`)缓冲区(`OS Buffer`)。因此，`redo log buffer`写入`redo log file`实际上是先写入`OS Buffer`，然后再通过系统调用`fsync()`将其刷到`redo log file`中，过程如下：
 
-![fsync](C:\Document\GitCode\interview\mysql\img\fsync.jpg)
+![fsync](\img\fsync.jpg)	
 
 
 
@@ -104,5 +102,11 @@ Redo Log 是存储引擎层（Innodb）的。binlog是Server层的。
 
 # redo log 的记录形式
 
-https://juejin.cn/post/6860252224930070536#heading-4
+`redo log`实际上记录数据页的变更，而这种变更记录是没必要全部保存，因此`redo log`实现上采用了大小固定，循环写入的方式，当写到结尾时，会回到开头循环写日志。如下图：
+
+![](\img\redo_log_file.jpg)	
+
+**在innodb中，既有`redo log`需要刷盘，还有`数据页`也需要刷盘，`redo log`存在的意义主要就是降低对`数据页`刷盘的要求**。在上图中，`write pos`表示`redo log`当前记录的`LSN`(逻辑序列号)位置，`check point`表示**数据页更改记录**刷盘后对应`redo log`所处的`LSN`(逻辑序列号)位置。`write pos`到`check point`之间的部分是`redo log`空着的部分，用于记录新的记录；`check point`到`write pos`之间是`redo log`待落盘的数据页更改记录。当`write pos`追上`check point`时，会先推动`check point`向前移动，空出位置再记录新的日志。
+
+启动`innodb`的时候，不管上次是正常关闭还是异常关闭，总是会进行恢复操作。因为`redo log`记录的是数据页的物理变化，因此恢复的时候速度比逻辑日志(如`binlog`)要快很多。 重启`innodb`时，首先会检查磁盘中数据页的`LSN`，如果数据页的`LSN`小于日志中的`LSN`，则会从`checkpoint`开始恢复。 还有一种情况，在宕机前正处于`checkpoint`的刷盘过程，且数据页的刷盘进度超过了日志页的刷盘进度，此时会出现数据页中记录的`LSN`大于日志中的`LSN`，这时超出日志进度的部分将不会重做，因为这本身就表示已经做过的事情，无需再重做。
 
