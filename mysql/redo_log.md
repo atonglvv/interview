@@ -35,6 +35,14 @@ change buffer 就是说，当我们需要更改数据库中的数据的时候，
 
 不过 change buffer 和 buffer pool 都涉及到内存操作，数据不能持久化，那么，当存在脏页的时候，MySQL 如果突然挂了，就有可能造成数据丢失（因为内存中的数据还没写到磁盘上），但是我们在实际使用 MySQL 的时候，其实并不会有这个问题，那么问题是怎么解决的？那就得靠 redo log 了。
 
+# WAL
+
+WAL: Write-Ahead Logging  预写日志系统
+
+其主要是指MySQL在执行写操作的时候并不是立刻更新到磁盘上，而是先记录在日志中，之后在合适的时间更新到磁盘中。日志主要分为undo log、redo log、binlog。
+
+MySQL真正使用WAL的原因是：磁盘的写操作是随机IO，比较耗性能，所以如果把每一次的更新操作都先写入log中，那么就成了顺序写操作，实际更新操作由后台线程再根据log异步写入。这样对于client端，延迟就降低了。并且，由于顺序写入大概率是在一个磁盘块内，这样产生的IO次数也大大降低。所以WAL的核心在于将随机写转变为了顺序写，降低了客户端的延迟，提升了吞吐量。
+
 # redo log
 
 MYSQL中事务的原子性和持久性离不开Redo Log。
@@ -99,6 +107,18 @@ MYSQL中事务的原子性和持久性离不开Redo Log。
 **page number：** 页号。
 
 **data：**这条redo日志的具体内容。
+
+# checkpoint
+
+Checkpoint机制就是将脏数据（在内存中更新但没刷盘）刷新回磁盘的机制，即只要发生Checkpoint，就要将脏数据刷新回磁盘，反过来，当MySQL重启时会去找Checkpoint，并且根据Checkpoint的特性。MySQL可以明确的知道checkponit之前的脏数据已经落过盘了，重启时没必要进行重做。
+
+Checkpoint机制的作用：
+
+1、所谓的崩溃恢复，其实就是MySQL重启时照着redo log中的最后一次Checkpoint之后的日志回放一遍
+
+2、因为Checkpoint会不断的更新，并且MySQL重启时只需要对Checkpoint之后的数据进行恢复，所以Checkpoint会缩短MySQL重启的时间。
+
+3、因此每次进行Checkpoint时buffer pool中的脏数据页、redo log中的脏日志都会落盘。所以Checkpoint实际上起到了为这两者进行瘦身的作用。维持两个的可用性。
 
 # MiNi-Transaction
 
