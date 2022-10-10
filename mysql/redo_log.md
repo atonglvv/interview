@@ -65,19 +65,28 @@ MYSQL中事务的原子性和持久性离不开Redo Log。
 - redo log 占用的空间非常小。
 - redo log 是顺序写入磁盘。（顺序IO）
 
-# redo log 写入时机
+# redo log 写入时机（刷盘规则）
 
 `redo log`包括两部分：一个是内存中的日志缓冲(`redo log buffer`)，另一个是磁盘上的日志文件(`redo log file`)。
 
 `mysql`每执行一条`DML`语句，先将记录写入`redo log buffer`，后续某个时间点（**写入时机**）再一次性将多个操作记录写到`redo log file`。这种**先写日志，再写磁盘**的技术就是`MySQL`里经常说到的`WAL(Write-Ahead Logging)` 技术。
-
-
 
 在计算机操作系统中，**用户空间**(`user space`)下的缓冲区数据一般情况下是无法直接写入磁盘的，中间必须经过操作系统**内核空间**(`kernel space`)缓冲区(`OS Buffer`)。因此，`redo log buffer`写入`redo log file`实际上是先写入`OS Buffer`，然后再通过系统调用`fsync()`将其刷到`redo log file`中，过程如下：
 
 ![fsync](\img\fsync.jpg)	
 
 
+
+**在Innodb存储引擎中，Redo Log具有以下几种刷盘规则：**
+
+- 开启事务，发出提交事务指令后是否刷新日志由变量 `innodb_flush_log_at_trx_commit`决定
+
+- 每秒刷新一次，刷新日志的频率由变量 `innodb_flush_log_at_timeout`的值决定，默认是 1s, 刷新日志的频率和是否执行了 commit 操作无关
+
+- 当 Log Buffer 中已经使用内存超过一半时，会触发刷盘操作
+- 当事务中存在checkpoint（检查点）时，在一定程度上代表了刷写到磁盘时日志所处的 LSN(日志逻辑序列号) 的位置。其中，LSN（log sequence number）表示日志的逻辑序列号。
+
+下面对第一条规则进行简单介绍。
 
 `mysql`支持三种将`redo log buffer`写入`redo log file`的时机，可以通过`innodb_flush_log_at_trx_commit`参数配置，各参数值含义如下：
 
@@ -86,6 +95,16 @@ MYSQL中事务的原子性和持久性离不开Redo Log。
 | 0（延迟写）         | 事务提交时不会将`redo log buffer`中日志写入到`os buffer`，而是每秒写入`os buffer`并调用`fsync()`写入到`redo log file`中。也就是说设置为0时是(大约)每秒刷新写入到磁盘中的，**当系统崩溃，会丢失1秒钟的数据**。 |
 | 1（实时写，实时刷） | 事务每次提交都会将`redo log buffer`中的日志写入`os buffer`并调用`fsync()`刷到`redo log file`中。这种方式**即使系统崩溃也不会丢失任何数据**（如果事务执行期间，mysql宕机，因为事务没有提交，所以又不会有损失），但是因为每次提交都写入磁盘，IO的性能较差。 |
 | 2（实时写，延迟刷） | 每次提交都仅写入到`os buffer`，然后是每秒调用`fsync()`将`os buffer`中的日志写入到`redo log file`。（不涉及`redo log buffer`） |
+
+# Redo Log 的写入机制
+
+Redo Log 记录的是物理日志，其文件内容是以循环的方式写入的，一个文件写满了就写入另一个文件，最后一个文件写满了就会向第一个文件写入，并且是覆盖写。
+
+![](\img\redo_log_write.png)	
+
+1. Write Pos 是数据表中当前记录所在的位置，随着写入，这个位置逐渐向后移动，最后一个文件写满后，这个位置移动到第一个文件的开始处。
+2. CheckPoint 是当前要擦除的位置，这个位置也是向后移动的，擦除之前要将数据更新到数据文件中。
+3. Write Pos 和 CheckPoint 之间存在间隔，间隔表示还可以记录新的操作。如果 Write Pos 写入较快，追上了擦除的位置，则表示已经写满，不再向 Redo Log 文件中写数据了，此时需要停止写入，擦除一些数据。
 
 # redo log 的日志格式
 
