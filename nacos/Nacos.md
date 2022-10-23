@@ -2,3 +2,7 @@
 
 # Nacos是AP还是CP？
 
+Nacos支持AP和CP模式的切换。
+
+
+

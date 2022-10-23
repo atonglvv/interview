@@ -72,9 +72,15 @@ redo log 实现。
 
 ### 记录锁（Record Locks）
 
+第一种情况，当我们对于唯一性的索引（包括唯一索引和主键索引）使用等值查询，精准匹配到一
+
+条记录的时候，这个时候使用的就是记录锁。比如 where id = 1 。
+
 对表中的行记录加锁，叫做记录锁，简称行锁。可以使用`sql`语句`select ... for update`来开启锁，`select`语句**必须为精准匹配**（=），不能为范围匹配，且**匹配列字段必须为唯一索引或者主键列**。也可以通过对查询条件为主键索引或唯一索引的数据行进行`UPDATE`操作来添加记录锁。
 
 ### 间隙锁（GAP Locks）
+
+第二种情况，当我们查询的记录不存在，无论是用等值查询还是范围查询的时候，它使用的都是间隙锁。
 
 间隙锁是对范围加锁，但不包括已存在的索引项。可以使用`sql`语句`select ... for update`来开启锁，`select`语句为**范围查询**，匹配列字段为索引项，且没有数据返回；或者`select`语句为等值查询，匹配字段为唯一索引，也没有数据返回。
 
@@ -100,6 +106,18 @@ innodb_locks_unsafe_for_binlog = 1
 
 ### 临键锁（Next-Key Locks）
 
+第三种情况，当我们使用了范围查询，不仅仅命中了 Record 记录，还包含了 Gap 间隙，在这种情况下我们使用的就是临键锁，它是 MySQL 里面默认的行锁算法，相当于记录锁加上间隙锁。
+
+比如我们使用>5 <9 ， 它包含了不存在的区间，也包含了一个 Record 7。
+
+锁住最后一个 key 的下一个左开右闭的区间。
+
+select * from t2 where id >5 and id <=7 for update; 锁住(4,7]和(7,10]
+
+select * from t2 where id >8 and id <=10 for update; 锁住 (7,10]，(10,+∞)
+
+总结：为什么要锁住下一个左开右闭的区间？——就是为了解决幻读的问题。
+
 当我们对上面的记录和间隙共同加锁时，添加的便是临键锁（左开右闭的集合加锁）。为了防止幻读，临键锁阻止特定条件的新记录的插入，因为插入时要获取插入意向锁，与已持有的临键锁冲突。可以使用`sql`语句`select ... for update`来开启锁，`select`语句为范围查询，匹配列字段为索引项，且有数据返回；或者`select`语句为等值查询，匹配列字段为索引项，不管有没有数据返回。
 
 插入意向锁并非意向锁，而是一种特殊的间隙锁。
@@ -124,6 +142,89 @@ innodb_locks_unsafe_for_binlog = 1
 MVCC主要靠undo log版本链与ReadView来实现。
 
 具体请参考同级目录下 mvcc.md。
+
+
+
+# 慢sql
+
+[`https://dev.mysql.com/doc/refman/5.7/en/slow-query-log.html`](https://dev.mysql.com/doc/refman/5.7/en/slow-query-log.html)
+
+## 打开慢日志开关
+
+因为开启慢查询日志是有代价的（跟 binlog、optimizer-trace 一样），所以它默认是关闭的：
+
+```sql
+show variables like 'slow_query%';
+```
+
+![image.png](https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/fyfile/1463/1650529519068/fd9bdf3f70114287b8f81df5c54c1f32.png)
+
+除了这个开关，还有一个参数，控制执行超过多长时间的 SQL 才记录到慢日志，默认是 10 秒。
+
+```sql
+show variables like '%long_query%';
+可以直接动态修改参数（重启后失效）。
+set @@global.slow_query_log=1; -- 1 开启，0 关闭，重启后失效 
+set @@global.long_query_time=3; -- mysql 默认的慢查询时间是 10 秒，另开一个窗口后才会查到最新值 
+
+show variables like '%long_query%'; 
+show variables like '%slow_query%';
+或者修改配置文件 my.cnf。
+以下配置定义了慢查询日志的开关、慢查询的时间、日志文件的存放路径。
+slow_query_log = ON 
+long_query_time=2 
+slow_query_log_file =/var/lib/mysql/localhost-slow.log
+模拟慢查询：
+select sleep(10);
+查询 user_innodb 表的 500 万数据（检查是不是没有索引）。
+SELECT * FROM `user_innodb` where phone = '136';
+```
+
+##### **4.1.2 慢日志分析**
+
+**1、日志内容**
+
+```sql
+show global status like 'slow_queries'; -- 查看有多少慢查询 
+show variables like '%slow_query%'; -- 获取慢日志目录
+cat /var/lib/mysql/ localhost-slow.log
+```
+
+![image.png](https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/fyfile/1463/1650529519068/772aa82513ed4458bdce19ce2cbfe2ec.png)
+
+```
+有了慢查询日志，怎么去分析统计呢？比如 SQL 语句的出现的慢查询次数最多，平均每次执行了多久？人工肉眼分析显然不可能。
+```
+
+**2、mysqldumpslow**
+
+```
+https://dev.mysql.com/doc/refman/5.7/en/mysqldumpslow.html
+```
+
+MySQL 提供了 mysqldumpslow 的工具，在 MySQL 的 bin 目录下。
+
+```sql
+mysqldumpslow --help
+```
+
+例如：查询用时最多的 10 条慢 SQL：
+
+```sql
+mysqldumpslow -s t -t 10 -g 'select' /var/lib/mysql/localhost-slow.log
+```
+
+![image.png](https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/fyfile/1463/1650529519068/2c2a6c2ff2154c99a7ca6362b2c34615.png)
+
+Count 代表这个 SQL 执行了多少次；
+
+Time 代表执行的时间，括号里面是累计时间；
+
+Lock 表示锁定的时间，括号是累计；
+
+Rows 表示返回的记录数，括号是累计。
+
+除了慢查询日志之外，还有一个 SHOW PROFILE 工具可以使用
 
 # 数据库持久化原理
 
@@ -173,6 +274,10 @@ redo log，undo log 是属于innodb，引擎层面的。
 
 
 # 什么是索引下推（ICP）？
+
+
+
+
 
 
 
