@@ -6,6 +6,20 @@ producer 将消息推送到 broker，consumer 从broker 拉取消息。
 
 缺点：如果 broker 没有可供消费的消息，将导致 consumer 不断在循环中轮询，直到新消息到到达。为了避免这点，Kafka 有个参数可以让 consumer阻塞知道新消息到达(当然也可以阻塞知道消息的数量达到某个特定的量这样就可以批量发送)。
 
+# Kafka在什么情况下会消息丢失？
+
+以下几个阶段，都有可能会出现消息丢失的情况
+
+1）消息发送的时候，如果发送出去以后，消息可能因为网络问题并没有发送成功。
+
+2）消息消费的时候，消费者在消费消息的时候，若还未做处理的时候，服务挂了，那这个消息不就丢失了。
+
+3）分区中的leader所在的broker挂了之后。
+
+我们知道，Kafka的Topic中的分区Partition是leader与follower的主从机制，发送消息与消费消息都直接面向leader分区，并不与follower交互，follower则会去leader中拉取消息，进行消息的备份，这样保证了一定的可靠性。
+
+但是，当leader副本所在的broker突然挂掉，那么就要从follower中选举一个leader，但leader的数据在**挂掉之前并没有同步到follower的这部分消息**肯定就会丢失掉。
+
 # Kafka先持久化还是先同步副本？
 
 先持久化。
