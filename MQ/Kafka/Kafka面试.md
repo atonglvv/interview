@@ -20,6 +20,16 @@ producer 将消息推送到 broker，consumer 从broker 拉取消息。
 
 但是，当leader副本所在的broker突然挂掉，那么就要从follower中选举一个leader，但leader的数据在**挂掉之前并没有同步到follower的这部分消息**肯定就会丢失掉。
 
+# 谈一谈 Kafka 的再均衡
+
+在Kafka中，当有新消费者加入或者订阅的topic数发生变化时，会触发Rebalance(再均衡：在同一个消费者组当中，分区的所有权从一个消费者转移到另外一个消费者)机制，Rebalance顾名思义就是重新均衡消费者消费。Rebalance的过程如下：
+
+第一步：所有成员都向coordinator发送请求，请求入组。一旦所有成员都发送了请求，coordinator会从中选择一个consumer担任leader的角色，并把组成员信息以及订阅信息发给leader。
+
+第二步：leader开始分配消费方案，指明具体哪个consumer负责消费哪些topic的哪些partition。一旦完成分配，leader会将这个方案发给coordinator。coordinator接收到分配方案之后会把方案发给各个consumer，这样组内的所有成员就都知道自己应该消费哪些分区了。
+
+所以对于Rebalance来说，Coordinator起着至关重要的作用。
+
 # Kafka先持久化还是先同步副本？
 
 先持久化。
