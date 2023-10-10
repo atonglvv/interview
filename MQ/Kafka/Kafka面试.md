@@ -6,6 +6,7 @@ producer 将消息推送到 broker，consumer 从broker 拉取消息。
 
 缺点：如果 broker 没有可供消费的消息，将导致 consumer 不断在循环中轮询，直到新消息到到达。为了避免这点，Kafka 有个参数可以让 consumer阻塞知道新消息到达(当然也可以阻塞知道消息的数量达到某个特定的量这样就可以批量发送)。
 
+<<<<<<< Updated upstream
 # Kafka在什么情况下会消息丢失？
 
 以下几个阶段，都有可能会出现消息丢失的情况
@@ -29,6 +30,25 @@ producer 将消息推送到 broker，consumer 从broker 拉取消息。
 第二步：leader开始分配消费方案，指明具体哪个consumer负责消费哪些topic的哪些partition。一旦完成分配，leader会将这个方案发给coordinator。coordinator接收到分配方案之后会把方案发给各个consumer，这样组内的所有成员就都知道自己应该消费哪些分区了。
 
 所以对于Rebalance来说，Coordinator起着至关重要的作用。
+=======
+# Kafka的应用场景
+
+1）**日志信息收集记录**我个人接触的项目中，Kafka使用最多的场景，就是用它与**FileBeats**和**ELK**组成典型的**日志收集、分析处理以及展示的框架**
+
+![](\img\面试01.jpg)	
+
+该图为**FileBeats+Kafka+ELK集群架构。**Kafka在框架中，作为消息缓冲队列
+
+FileBeats先将数据传递给消息队列，Logstash server（二级Logstash）拉取消息队列中的数据，进行过滤和分析，然后将数据传递给Elasticsearch进行存储，最后，再由Kibana将日志和数据呈现给用户
+
+由于引入了Kafka缓冲机制，即使远端**Logstash server**因故障停止运行，数据也不会丢失，可靠性得到了大大的提升。
+
+2）**用户轨迹跟踪**：kafka经常被用来记录web用户或者app用户的各种活动，如浏览网页、搜索、点击等操作，这些活动信息被各个服务器发布到kafka的topic中，然后消费者通过订阅这些topic来做实时的监控分析，当然也可以保存到数据库。
+
+3）**运营指标**：kafka也经常用来记录运营监控数据。包括收集各种分布式应用的数据，生产各种操作的集中反馈，比如报警和报告。
+
+4）**流式处理**：比如spark streaming和storm。
+>>>>>>> Stashed changes
 
 # Kafka先持久化还是先同步副本？
 
