@@ -1,3 +1,11 @@
+**Kafka 分区的目的？**
+
+分区对于 Kafka 集群的好处是：实现负载均衡。
+
+分区对于消费者来说，可以提高并发度，提高效率。
+
+
+
 **kafka的消费者是pull(拉)还是push(推)模式，这种模式有什么好处？**
 
 producer 将消息推送到 broker，consumer 从broker 拉取消息。
@@ -104,9 +112,25 @@ Consumer则需要使用单线程或者保证消费顺序的线程模型（Rocket
 
 **Kafka 如何保证数据高可用？副本，ack，HW**
 
+request.required.acks有三个值0 1 -1(all)
+
+**0 :** 生产者不会等待broker的ack，这个延迟最低但是存储的保证最弱当server挂掉的时候就会丢数据。
+
+**1：**服务端会等待ack值leader副本确认接收到消息后发送ack但是如果leader挂掉后他不确保是否复制完成新leader也会导致数据丢失。
+
+**-1(all)：**服务端会等所有的follower的副本受到数据后才会受到leader发出的ack，这样数据不会丢失。
+
 
 
 **解释ISR、AR、HW、LEO、LSO、LW**
+
+LEO：是 LogEndOffset 的简称，代表当前日志文件中下一条。
+
+HW：水位或水印（watermark）一词，也可称为高水位(high watermark)，通常被用在流式处理领域（比如Apache Flink、Apache Spark等），以表征元素或事件在基于时间层面上的进度。在Kafka中，水位的概念反而与时间无关，而是与位置信息相关。严格来说，它表示的就是位置信息，即位移（offset）。取 partition 对应的 ISR中 最小的 LEO 作为 HW，consumer 最多只能消费到 HW 所在的位置上一条信息。
+
+LSO：是 LastStableOffset 的简称，对未完成的事务而言，LSO 的值等于事务中第一条消息的位置(firstUnstableOffset)，对已完成的事务而言，它的值同 HW 相同。
+
+LW：Low Watermark 低水位, 代表 AR 集合中最小的 logStartOffset 值。
 
 
 
@@ -149,6 +173,16 @@ Follower 副本的 LEO 落后 Leader LEO 的时间，是否超过了 Broker 端�
 
 
 **为什么kafka能保证这么高的吞吐量？[生产者批量发送/压缩]**
+
+**顺序读写**：
+
+**零拷贝**：
+
+**文件分段**：segment。
+
+**批量发送**：Producer端可以在内存中合并多条消息后，以一次请求的方式发送了批量的消息给broker，从而大大减少broker存储消息的IO操作次数。但也一定程度上影响了消息的实时性，相当于以时延代价，换取更好的吞吐量。
+
+**数据压缩**：Producer端可以通过GZIP或Snappy格式对消息集合进行压缩。Producer端进行压缩之后，在Consumer端需进行解压。压缩的好处就是减少传输的数据量，减轻对网络传输的压力，在对大数据处理上，瓶颈往往体现在网络上而不是CPU（压缩和解压会耗掉部分CPU资源）。
 
 
 
