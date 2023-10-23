@@ -22,6 +22,22 @@ Class
 
 销毁
 
+# spring与tomcat的关系
+
+tomcat是一类Web应用服务器，Spring 框架是一个轻量级的 Java 开发框架。Tomcat提供Web容器服务，Spring为应用开发提供平台。
+
+tomcat在启动时会触发容器初始化事件 。
+
+tomcat启动时会加载和解析web.xml文件，获取其中配置的filter,servlet，listener等设置到context中后，接下来就是执行了。执行到配置的ContextLoaderListener时，该监听器最终会调用AbstractApplicationContext.refresh（）便会启动Spring容器。
+
+spring的ContextLoaderListener监听到这个事件后会执⾏contextinitialized⽅法，在该⽅法中会初始化spring 的根容器即ioc容器，初始化完成之后，会将这个容器放⼊到servletContext中，以便获取 。
+
+tomcat在启动过程中还会去扫描加载servlet,⽐如springmvc的dispatchServlet(前端控制器),⽤来处理每⼀个 servlet 。 
+
+ servlet⼀般采⽤延时加载,当⼀个请求过来的时候发现dispatchservlet还未初始化,则会调⽤其init⽅法,初始化 时候会建⽴⾃⼰的容器spring mvc容器,同时spring mvc容器通过servletcontext上下⽂来获取到spring ioc容 器将ioc容器设置为其⽗容器; 
+
+注意：spring mvc中容器可以访问spring ioc容器中的bean反之不能即在controller中可以注⼊service bean对象,在service中不能注⼊controller容器。
+
 # aop代理对象没有进行依赖注入，那对象的依赖从哪获取？
 
 cglib生成代理对象，通过字节码生成被代理对象的子类，并且依赖被代理对象，这样就可以在代理对象中使用被代理对象的依赖。
@@ -115,10 +131,6 @@ cglib生成代理对象，通过字节码生成被代理对象的子类，并且
 # SpringAop底层实现原理
 
 bean的创建过程中有一个步骤可以对bean进行扩展实现[BeanPostProcessor]，aop本身就是一个扩展功能，所以在BeanPostProcessor的后置处理方法中来进行实现。
-
-
-
-
 
 # Spring事务代理对象的切面逻辑
 
@@ -248,8 +260,6 @@ FactoryBean
 
 
 
-
-
 # 如果容器中存在多个相同类型的Bean，获取bean的优先级是什么？
 
 
@@ -279,8 +289,6 @@ tomcat在启动过程中还会去扫描加载servlet,⽐如springmvc的dispatchS
 # 了解过cglib动态代理吗？他跟jdk动态代理的区别是什么？
 
 优先是jdk动态代理，其次是cglib动态代理。
-
-
 
 
 
