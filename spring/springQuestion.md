@@ -292,7 +292,50 @@ tomcat在启动过程中还会去扫描加载servlet,⽐如springmvc的dispatchS
 
 
 
+# spring的扩展机制
 
+## BeanFactoryPostProcessor
+
+BeanFactoryPostProcessor，是由 Spring 框架组建提供的容器扩展机制，允许在 Bean 对象注册后但未实例化之前，对 Bean 的定义信息 `BeanDefinition` 执行修改操作。Bean必须实现 BeanFactoryPostProcessor 接口，并重写postProcessBeanFactory方法，如下代码：
+
+```java
+public class MyBeanFactoryPostProcessor implements BeanFactoryPostProcessor {
+
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+
+        BeanDefinition beanDefinition = beanFactory.getBeanDefinition("userService");
+        PropertyValues propertyValues = beanDefinition.getPropertyValues();
+
+        propertyValues.addPropertyValue(new PropertyValue("age", 28));
+    }
+
+}
+```
+
+## BeanPostProcessor
+
+BeanPostProcessor，也是 Spring 提供的扩展机制，不过 BeanPostProcessor 是在 Bean 对象实例化之后修改 Bean 对象，也可以替换 Bean 对象。这部分与后面要实现的 AOP 有着密切的关系。Bean必须实现 BeanPostProcessor 接口，并重写postProcessBeforeInitialization 跟 postProcessAfterInitialization 方法，如下代码：
+
+```java
+public class MyBeanPostProcessor implements BeanPostProcessor {
+
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+        if ("userService".equals(beanName)) {
+            UserService userService = (UserService) bean;
+            userService.setLocation("改为：北京");
+        }
+        return bean;
+    }
+
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        return bean;
+    }
+
+}
+```
 
 
 
