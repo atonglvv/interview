@@ -98,8 +98,6 @@ cglib生成代理对象，通过字节码生成被代理对象的子类，并且
 
 ## 缓存的放置时间和删除时间
 
-# aware接口是干嘛用的？
-
 # BeanPostProcessor的后置处理方法，关于AOP
 
 # BeanFactory跟FactoryBean有什么区别？
@@ -339,11 +337,36 @@ public class MyBeanPostProcessor implements BeanPostProcessor {
 
 
 
+# Spring配置文件对于占位符 ${} 的解析源码分析
+
+最终是通过实现了BeanFactoryPostProcessor，来修改BeanDefinition。如下源码：
+
+```java
+public class PropertySourcesPlaceholderConfigurer extends PlaceholderConfigurerSupport implements EnvironmentAware {
+}
+```
 
 
 
+```java
+public abstract class PlaceholderConfigurerSupport extends PropertyResourceConfigurer implements BeanNameAware, BeanFactoryAware {
+}
+```
 
 
 
+```java
+public abstract class PropertyResourceConfigurer extends PropertiesLoaderSupport implements BeanFactoryPostProcessor, PriorityOrdered {
+}
+```
 
+# @Autowired 实现原理是什么？
+
+# @PostConstruct 的作用与实现原理是什么？
+
+
+
+# aware接口是干嘛用的？
+
+可以在自定义对象中获取容器对象。
 
