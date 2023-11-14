@@ -68,6 +68,8 @@ redo log 实现。
 
 ## LBCC
 
+具体请参考同级目录下 lbcc.md。
+
 ## MVCC
 
 在MVCC中，**读写不冲突**，记录每一行的多个版本，来避免在多个事务之间的竞争。以空间换时间的思路，极大地提高了读写性能。
@@ -90,7 +92,7 @@ MVCC主要靠undo log版本链与ReadView来实现。
 show variables like 'slow_query%';
 ```
 
-![image.png](https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/fyfile/1463/1650529519068/fd9bdf3f70114287b8f81df5c54c1f32.png)
+![](img\慢sql01.png)	
 
 除了这个开关，还有一个参数，控制执行超过多长时间的 SQL 才记录到慢日志，默认是 10 秒。
 
@@ -123,7 +125,7 @@ show variables like '%slow_query%'; -- 获取慢日志目录
 cat /var/lib/mysql/ localhost-slow.log
 ```
 
-![image.png](https://fynotefile.oss-cn-zhangjiakou.aliyuncs.com/fynote/fyfile/1463/1650529519068/772aa82513ed4458bdce19ce2cbfe2ec.png)
+![](img\慢sql02.png)	
 
 ```
 有了慢查询日志，怎么去分析统计呢？比如 SQL 语句的出现的慢查询次数最多，平均每次执行了多久？人工肉眼分析显然不可能。
