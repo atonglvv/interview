@@ -109,7 +109,7 @@ ReadView就是事务在使用MVCC机制进行快照读操作时产生的读视�
 这个ReadView中主要包含4个比较重要的内容，分别如下：
 
 - creator_trx_id ，创建这个 Read View 的事务 ID。说明：只有在对表中的记录做改动时（执行INSERT、DELETE、UPDATE这些语句时）才会为事务分配事务id，否则在一个只读事务中的事务id值都默认为0。
-- trx_ids ，表示在生成ReadView时当前系统中活跃的读写事务的事务id列表 。
+- trx_ids ，表示在生成ReadView时当前系统中活跃的读写事务的事务id列表 。比例如：事务7,事务6都还没提交，事务8又开启了一个事务，此时事务8的readview的creator_trx_id = 8，trx_ids={6,7,8}
 - up_limit_id ，活跃的事务中最小的事务 ID。
 - low_limit_id ，表示生成ReadView时系统中应该分配给下一个事务的 id 值。low_limit_id 是系统最大的事务id值，这里要注意是系统中的事务id，需要区别于正在活跃的事务ID。
 
@@ -125,7 +125,7 @@ trx_ids为trx2、trx3、trx5和trx8的集合，系统的最大事务ID (low_limi
 
 有了这个ReadView，这样在访问某条记录时，只需要按照下边的步骤判断记录的某个版本是否可见。
 
-- 如果被访问版本的trx_id属性值与ReadView中的 creator_trx_id 值相同，意味着当前事务在访问它自己修改过的记录，所以该版本可以被当前事务访问。20可以访问自己
+- 如果被访问版本的trx_id属性值与ReadView中的 creator_trx_id 值相同，意味着当前事务在访问它自己修改过的记录，所以该版本可以被当前事务访问。
 
 - 如果被访问版本的trx_id属性值小于ReadView中的 up_limit_id值，表明生成该版本的事务在当前事务生成ReadView前已经提交，所以该版本可以被当前事务访问。
 
@@ -426,6 +426,14 @@ insert into student(id,name) values(3,'王五');
 ![](img\mvcc10.png)	
 
 结论：最终事务 A 的第二次查询，只能查询出 id=1 的这条数据。这和事务 A 的第一次查询的结果是一样的，因此没有出现幻读现象，所以说在 MySQL 的可重复读隔离级别下，不存在幻读问题。
+
+
+
+# 二级索引与MVCC
+
+我们知道只有在聚簇索引记录中才有trx_id 和 roll_pointer隐藏列。如果某个查询语句是使用二级索引来执行查询的，该如何判断可见性呢？
+
+二级索引页面的 Page Header 部分有一个名为 PAGE_MAX_TRX_ID 的属性，执行增删改操作时，如果执行该操作的事物的事务 id 大于 PAGE_MAX_TRX_ID 的属性值，则将其值设置为执行操作的事务id，这就意味着 PAGE_MAX_TRX_ID 属性值设置为执行该操作的最大事务 id。 当 SELECT 语句访问某个二级索引记录时，如果 ReadView 的 min_trx_id > PAGE_MAX_TRX_ID 属性值？如果是，则说明该页面中的所有记录对该 ReadView 可见；否则就需要执行回表判断 利用二级索引记录中的主键值进行回表操作，得到对应的聚簇索引记录后在按照聚簇索引的方式，判断该可见性。
 
 
 
