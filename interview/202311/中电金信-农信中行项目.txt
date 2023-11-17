@@ -1,0 +1,19 @@
+hashmap数据结构？什么时候变为红黑树？红黑树之后还能不能再变回链表？什么条件？
+spring aop的原理是什么？
+spring 生成bean 的方式有几种？
+java代理有几种方式？有什么不同？
+mybatis是怎么将DAO（Mapper）注入到spring容器中的？
+mybatis是怎么通过直接调用接口，就能查询的？
+springboot的@Async原理是什么？有什么问题么？
+你们的熔断怎么做的？
+熔断的底层原理是怎么做的？
+你用过什么注册中心？
+zookeeper跟eurake的区别是什么？
+了解cap么？
+zookeeper是cp？还是ap？
+jvm什么时候会触发GC？
+jvm调优怎么做？
+mysql的binlog、redolog、undolog都是干嘛的？
+mysql-innodb的存储结构是什么？
+怎么防止sql注入？
+mysql怎么解决慢sql问题？

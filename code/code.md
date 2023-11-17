@@ -228,7 +228,7 @@ public static void preOrderRecur(TreeNode head) {
     }
     System.out.print(head.value + " ");
     preOrderRecur(head.left);
-    preOrderRecur(head.right);
+    preOrderRecur(head.rig 。ht);
 }
 ```
 
@@ -293,4 +293,31 @@ public static void postOrderRecur(TreeNode head) {
 ## 定义三个方法（method1、method2、method3）分别执行时间是（1s、2s、3s），要求并行去查这三个方法拿到他们的结果
 
 线程池
+
+## 顺序打印
+
+```java
+public class ABC7 {
+
+    private static CountDownLatch countDownLatchB = new CountDownLatch(1);
+    private static CountDownLatch countDownLatchC = new CountDownLatch(1);
+
+    public static void printA() {
+        System.out.println("A");
+        countDownLatchB.countDown();
+    }
+
+    public static void printB() throws InterruptedException {
+        countDownLatchB.await();
+        System.out.println("B");
+        countDownLatchC.countDown();
+    }
+
+    public static void printC() throws InterruptedException {
+        countDownLatchC.await();
+        System.out.println("C");
+    }
+
+}
+```
 
