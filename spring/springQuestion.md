@@ -365,8 +365,3 @@ public abstract class PropertyResourceConfigurer extends PropertiesLoaderSupport
 # @PostConstruct 的作用与实现原理是什么？
 
 
-
-# aware接口是干嘛用的？
-
-可以在自定义对象中获取容器对象。
-
