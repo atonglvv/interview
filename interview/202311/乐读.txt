@@ -1,0 +1,15 @@
+mysql，abc三个字段，建联合索引abc，下面这条sql，走索引么？
+select count(c) from t where a=1 or b=2 group by c；
+
+java 怎么保证线程a、线程b、线程c顺序执行？有哪几种方法？
+
+java final的作用是什么？
+
+java，final int a = 1; final int b = 2;  a = b;  sout(a);  输出什么？
+
+数据库，5kw左右的数据，我们需要delete已经逻辑删除的数据，该怎么做？
+
+
+
+
+
