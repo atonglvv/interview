@@ -22,6 +22,22 @@ Class
 
 销毁
 
+# spring与tomcat的关系
+
+tomcat是一类Web应用服务器，Spring 框架是一个轻量级的 Java 开发框架。Tomcat提供Web容器服务，Spring为应用开发提供平台。
+
+tomcat在启动时会触发容器初始化事件 。
+
+tomcat启动时会加载和解析web.xml文件，获取其中配置的filter,servlet，listener等设置到context中后，接下来就是执行了。执行到配置的ContextLoaderListener时，该监听器最终会调用AbstractApplicationContext.refresh（）便会启动Spring容器。
+
+spring的ContextLoaderListener监听到这个事件后会执⾏contextinitialized⽅法，在该⽅法中会初始化spring 的根容器即ioc容器，初始化完成之后，会将这个容器放⼊到servletContext中，以便获取 。
+
+tomcat在启动过程中还会去扫描加载servlet,⽐如springmvc的dispatchServlet(前端控制器),⽤来处理每⼀个 servlet 。 
+
+ servlet⼀般采⽤延时加载,当⼀个请求过来的时候发现dispatchservlet还未初始化,则会调⽤其init⽅法,初始化 时候会建⽴⾃⼰的容器spring mvc容器,同时spring mvc容器通过servletcontext上下⽂来获取到spring ioc容 器将ioc容器设置为其⽗容器; 
+
+注意：spring mvc中容器可以访问spring ioc容器中的bean反之不能即在controller中可以注⼊service bean对象,在service中不能注⼊controller容器。
+
 # aop代理对象没有进行依赖注入，那对象的依赖从哪获取？
 
 cglib生成代理对象，通过字节码生成被代理对象的子类，并且依赖被代理对象，这样就可以在代理对象中使用被代理对象的依赖。
@@ -82,8 +98,6 @@ cglib生成代理对象，通过字节码生成被代理对象的子类，并且
 
 ## 缓存的放置时间和删除时间
 
-# aware接口是干嘛用的？
-
 # BeanPostProcessor的后置处理方法，关于AOP
 
 # BeanFactory跟FactoryBean有什么区别？
@@ -115,10 +129,6 @@ cglib生成代理对象，通过字节码生成被代理对象的子类，并且
 # SpringAop底层实现原理
 
 bean的创建过程中有一个步骤可以对bean进行扩展实现[BeanPostProcessor]，aop本身就是一个扩展功能，所以在BeanPostProcessor的后置处理方法中来进行实现。
-
-
-
-
 
 # Spring事务代理对象的切面逻辑
 
@@ -248,8 +258,6 @@ FactoryBean
 
 
 
-
-
 # 如果容器中存在多个相同类型的Bean，获取bean的优先级是什么？
 
 
@@ -282,17 +290,78 @@ tomcat在启动过程中还会去扫描加载servlet,⽐如springmvc的dispatchS
 
 
 
+# spring的扩展机制
+
+## BeanFactoryPostProcessor
+
+BeanFactoryPostProcessor，是由 Spring 框架组建提供的容器扩展机制，允许在 Bean 对象注册后但未实例化之前，对 Bean 的定义信息 `BeanDefinition` 执行修改操作。Bean必须实现 BeanFactoryPostProcessor 接口，并重写postProcessBeanFactory方法，如下代码：
+
+```java
+public class MyBeanFactoryPostProcessor implements BeanFactoryPostProcessor {
+
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+
+        BeanDefinition beanDefinition = beanFactory.getBeanDefinition("userService");
+        PropertyValues propertyValues = beanDefinition.getPropertyValues();
+
+        propertyValues.addPropertyValue(new PropertyValue("age", 28));
+    }
+
+}
+```
+
+## BeanPostProcessor
+
+BeanPostProcessor，也是 Spring 提供的扩展机制，不过 BeanPostProcessor 是在 Bean 对象实例化之后修改 Bean 对象，也可以替换 Bean 对象。这部分与后面要实现的 AOP 有着密切的关系。Bean必须实现 BeanPostProcessor 接口，并重写postProcessBeforeInitialization 跟 postProcessAfterInitialization 方法，如下代码：
+
+```java
+public class MyBeanPostProcessor implements BeanPostProcessor {
+
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+        if ("userService".equals(beanName)) {
+            UserService userService = (UserService) bean;
+            userService.setLocation("改为：北京");
+        }
+        return bean;
+    }
+
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        return bean;
+    }
+
+}
+```
 
 
 
+# Spring配置文件对于占位符 ${} 的解析源码分析
+
+最终是通过实现了BeanFactoryPostProcessor，来修改BeanDefinition。如下源码：
+
+```java
+public class PropertySourcesPlaceholderConfigurer extends PlaceholderConfigurerSupport implements EnvironmentAware {
+}
+```
 
 
 
+```java
+public abstract class PlaceholderConfigurerSupport extends PropertyResourceConfigurer implements BeanNameAware, BeanFactoryAware {
+}
+```
 
 
 
+```java
+public abstract class PropertyResourceConfigurer extends PropertiesLoaderSupport implements BeanFactoryPostProcessor, PriorityOrdered {
+}
+```
 
+# @Autowired 实现原理是什么？
 
-
+# @PostConstruct 的作用与实现原理是什么？
 
 

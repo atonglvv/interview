@@ -52,7 +52,7 @@ yum -y install gcc-c++
 yum makecache fast
 ```
 
-## 验证docker安装成功
+## 验证docker安装成功，查看Docker版本
 
 ```bash
 docker version
