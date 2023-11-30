@@ -59,6 +59,7 @@ public class ServiceProxy {
         return Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz}, handler);
     }
 
+    // 通过以下代码可以将 JVM 中加载的代理类输出成 class 文件，之后就可以使用反编译工具查看代理类的源码。
     private static void generateProxyClass() {
         byte[] classFile = ProxyGenerator.generateProxyClass("$Proxy0", Hello.class.getInterfaces());
         String path = "/Users/nathan.yang/workspace/algorithm_Java/out/StuProxy.class";
@@ -142,9 +143,9 @@ public static Object newProxyInstance(ClassLoader loader,
 
 `Proxy#getProxyClass0()` 方法其实是从一个 `WeakCache` 中去获取代理类，其获取逻辑是如果缓存类中没有代理类的话就调用`ProxyClassFactory#apply()`，通过代理类工厂去即时生成一个代理类，其步骤如下：
 
-首先通过指定的类加载器去验证目标接口是否可被其加载 通过接口所在包等条件决定代理类所在包及代理类的全限定名称，代理类名称是`包名+$Proxy+id`。
+首先通过指定的类加载器去验证目标接口是否可被其加载，通过接口所在包等条件决定代理类所在包及代理类的全限定名称，代理类名称是`包名+$Proxy+id`。
 
-通过 `ProxyGenerator.generateProxyClass()`` 生成字节码数组，然后调用 `native`方法`defineClass0()`` 将其动态生成的代理类字节码加载到内存中。
+通过 `ProxyGenerator.generateProxyClass()` 生成字节码数组，然后调用 `native`方法`defineClass0()` 将其动态生成的代理类字节码加载到内存中。
 
 ```java
 private static Class < ? > getProxyClass0(ClassLoader loader,
