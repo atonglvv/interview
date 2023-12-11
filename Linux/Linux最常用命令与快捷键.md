@@ -1,8 +1,61 @@
-# 查看Linux内核
+# 系统相关
 
+## 内核
+
+查看内核信息
+
+```shell
 cat /etc/redhat-release
 
 uname -r
+```
+
+## cpu
+
+```shell
+cat /proc/cpuinfo |more
+```
+
+关于该文件输出项含义，如下表：
+
+| 输出项          | 含义                                                         |
+| --------------- | ------------------------------------------------------------ |
+| processor       | 系统中逻辑处理核的编号。对于单核处理器，则可认为是其CPU编号，对于多核处理器则可以是物理核、或者使用超线程技术虚拟的逻辑核 |
+| vendor_id       | CPU制造商                                                    |
+| cpu family      | CPU产品系列代号                                              |
+| model           | CPU属于其系列中的哪一代的代号                                |
+| model name      | CPU属于的名字及其编号、标称主频                              |
+| stepping        | CPU属于制作更新版本                                          |
+| cpu MHz         | CPU的实际使用主频                                            |
+| cache size      | CPU二级缓存大小                                              |
+| physical id     | 单个CPU的标号                                                |
+| siblings        | 单个CPU逻辑物理核数                                          |
+| core id         | 当前物理核在其所处CPU中的编号，这个编号不一定连续            |
+| cpu cores       | 该逻辑核所处CPU的物理核数                                    |
+| apicid          | 用来区分不同逻辑核的编号，系统中每个逻辑核的此编号必然不同，此编号不一定连续 |
+| fpu             | 是否具有浮点运算单元（Floating Point Unit）                  |
+| fpu_exception   | 是否支持浮点计算异常                                         |
+| cpuid level     | 执行cpuid指令前，eax寄存器中的值，根据不同的值cpuid指令会返回不同的内容 |
+| wp              | 表明当前CPU是否在内核态支持对用户空间的写保护（Write Protection） |
+| flags           | 当前CPU支持的功能                                            |
+| bogomips        | 在系统内核启动时粗略测算的CPU速度（Million Instructions Per Second） |
+| clflush size    | 每次刷新缓存的大小单位                                       |
+| cache_alignment | 缓存地址对齐单位                                             |
+| address sizes   | 可访问地址空间位数                                           |
+
+### cpu 个数
+
+```shell
+cat /proc/cpuinfo | grep "physical id" | sort | uniq | wc -l
+```
+
+### cpu核心数
+
+```shell
+cat /proc/cpuinfo | grep "cpu cores" | uniq
+```
+
+## 内存
 
 
 
