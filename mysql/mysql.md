@@ -127,7 +127,22 @@ redo log，undo log 是属于innodb，引擎层面的。
 
 # 什么是索引下推（ICP）？
 
+索引下推(Index Condition Pushdown，简称ICP)，是MySQL5.6版本的新特性，它能减少回表查询次数，提高查询效率。
 
+索引下推的**下推**其实就是指将部分上层（服务层）负责的事情，交给了下层（引擎层）去处理。
+
+举个例子，表中有一个复合索引（a,b,c），如下sql：
+
+```sql
+explain
+select *
+from table
+where a = 'a' and c = 'c' ;
+```
+
+结果中 Extra列显示： Using index condition。
+
+这种情况就用到了索引下推，存储引擎会在复合索引（a,b,c）中取判断这两个条件（尽管列c没有命中索引），这样可以减少回表次数。
 
 
 
