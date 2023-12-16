@@ -114,10 +114,18 @@ tail -3 openfire.xml
 
 
 
-# 新建文件夹
+# 文件夹
+
+## 新建文件夹
 
 ```shell
 mkdir <folderName>
+```
+
+## 删除文件夹
+
+```shell
+rm -rf <folderName>
 ```
 
 

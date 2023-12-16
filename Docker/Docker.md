@@ -40,16 +40,34 @@ yum -y install gcc
 yum -y install gcc-c++
 ```
 
-## 注意：Set up the repository
+## 安装yum工具
 
-不要安装官网推荐的 repository。容易Timeout。
+```shell
+yum install -y yum-utils device-mapper-persistent-data lvm2 --skip-broken
+```
 
-推荐阿里云repository。
+## 设置docker镜像工具
+
+```shell
+yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+```
+
+执行如下命令将docker-ce.repo镜像仓库配置文件中的镜像源修改成阿里镜像源：
+
+```shell
+sed -i 's/download.docker.com/mirrors.aliyun.com\/docker-ce/g' /etc/yum.repos.d/docker-ce.repo
+```
 
 ## 注意：建议更新一下yum软件包索引
 
 ```bash
 yum makecache fast
+```
+
+## 安装docker
+
+```shell
+yum -y install docker-ce docker-ce-cli containerd.io
 ```
 
 ## 验证docker安装成功，查看Docker版本
@@ -64,6 +82,12 @@ docker version
 systemctl start docker
 ```
 
+## 设置docker开机自动启动
+
+```shell
+systemctl enable docker
+```
+
 ## docker run hello-world
 
 ```bash
@@ -72,7 +96,9 @@ docker run hello-world
 
 ## 阿里云-容器镜像服务
 
-登录阿里云搜索：容器镜像服务
+[登录阿里云搜索：容器镜像服务](https://cr.console.aliyun.com/cn-hangzhou/instances/mirrors?accounttraceid=e5e6948c0f394fd3941307510891df6coeqo)
+
+注意下方，registry-mirrors 参数需要修改，参考阿里云镜像连接
 
 ```bash
 sudo mkdir -p /etc/docker
@@ -83,6 +109,44 @@ sudo tee /etc/docker/daemon.json <<-'EOF'
 EOF
 sudo systemctl daemon-reload
 sudo systemctl restart docker
+```
+
+# 安装docker-compose环境
+
+```shell
+curl -SL https://github.com/docker/compose/releases/download/v2.17.3/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+```
+
+当然可以先下载下来，在上传到服务器，毕竟服务器下载很慢（github）。
+
+给docker-compose添加可执行权限：
+
+```shell
+sudo chmod +x /usr/local/bin/docker-compose
+```
+
+下载并安装成功后，使用如下命令创建docker-compose软链接
+
+```shell
+ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+```
+
+随后查看docker-compose版本：
+
+```shell
+docker-compose version
+```
+
+成功安装：
+
+```shell
+Docker Compose version v2.17.3
+```
+
+使用（注意用自己的yml文件）：
+
+```shell
+docker-compose -f <docker-compose-xxxxx.yml> up -d --force-recreate
 ```
 
 # Docker的卸载
