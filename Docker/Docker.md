@@ -29,6 +29,17 @@ docker不需要Hypervisor（虚拟机）实现硬件资源虚拟化，运行在d
 
 避免引导、加载操作系统内核返回等比较费时费资源的过程。
 
+# Docker的卸载
+
+[Docker官网Unstall教程](https://docs.docker.com/engine/install/)
+
+```bash
+systemctl stop docker
+yum remove docker-ce docker-ce-cli containerd.io docker-compose-plugin
+rm -rf /var/lib/docker
+rm -rf /var/lib/containerd
+```
+
 # Docker的安装
 
 [Docker官网Install教程](https://docs.docker.com/engine/install/)
@@ -148,19 +159,6 @@ Docker Compose version v2.17.3
 ```shell
 docker-compose -f <docker-compose-xxxxx.yml> up -d --force-recreate
 ```
-
-# Docker的卸载
-
-[Docker官网Unstall教程](https://docs.docker.com/engine/install/)
-
-```bash
-systemctl stop docker
-yum remove docker-ce docker-ce-cli containerd.io docker-compose-plugin
-rm -rf /var/lib/docker
-rm -rf /var/lib/containerd
-```
-
-
 
 # Docker 常用命令
 
