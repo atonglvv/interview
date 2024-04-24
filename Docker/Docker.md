@@ -160,6 +160,12 @@ Docker Compose version v2.17.3
 docker-compose -f <docker-compose-xxxxx.yml> up -d --force-recreate
 ```
 
+关闭启动的容器
+
+```shell
+docker-compose -f <docker-compose-xxxxx.yml> down
+```
+
 # Docker 常用命令
 
 ## 启动Docker
