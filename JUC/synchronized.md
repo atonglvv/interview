@@ -6,7 +6,7 @@
 
 锁对象：理论上可以是**任意的唯一对象**
 
-synchronized 是可重入、不公平的重量级锁
+synchronized 是**可重入、不公平**的重量级锁
 
 原则上：
 
@@ -74,7 +74,7 @@ synchronized 修饰的方法的不具备继承性，所以子类是线程不安�
 
 同步方法底层也是有锁对象的：
 
-* 如果方法是实例方法：同步方法默认用 this 作为的锁对象
+* 如果方法是**实例方法**：同步方法默认用 this 作为的锁对象
 
   ```java
   public synchronized void test() {} //等价于
@@ -83,7 +83,7 @@ synchronized 修饰的方法的不具备继承性，所以子类是线程不安�
   }
   ```
 
-* 如果方法是静态方法：同步方法默认用类名 .class 作为的锁对象
+* 如果方法是**静态方法**：同步方法默认用类名 .class 作为的锁对象
 
   ```java
   class Test{
@@ -152,7 +152,7 @@ public static void main(String[] args) {
 
 Monitor 被翻译为监视器或管程
 
-每个 Java 对象都可以关联一个 Monitor 对象，Monitor 也是 class，其**实例存储在堆中**，如果使用 synchronized 给对象上锁（重量级）之后，该对象头的 Mark Word 中就被设置指向 Monitor 对象的指针，这就是重量级锁
+每个 Java 对象都可以关联一个 Monitor 对象，Monitor 也是 class，其**实例存储在堆中**，如果使用 synchronized 给对象上锁（重量级）之后，该对象头的 Mark Word 中就被设置指向 Monitor 对象的指针，这就是重量级锁。
 
 * Mark Word 结构：最后两位是**锁标志位**
 
