@@ -156,23 +156,25 @@ Monitor 被翻译为监视器或管程
 
 * Mark Word 结构：最后两位是**锁标志位**
 
-  ![](https://seazean.oss-cn-beijing.aliyuncs.com/img/Java/JUC-Monitor-MarkWord结构32位.png)
+  ![](img\syn001.png)
 
 * 64 位虚拟机 Mark Word：
 
-  ![](https://seazean.oss-cn-beijing.aliyuncs.com/img/Java/JUC-Monitor-MarkWord结构64位.png)
+  ![](img\JUC-Monitor-MarkWord结构64位.png)
 
 工作流程：
 
 * 开始时 Monitor 中 Owner 为 null
 * 当 Thread-2 执行 synchronized(obj) 就会将 Monitor 的所有者 Owner 置为 Thread-2，Monitor 中只能有一个 Owner，**obj 对象的 Mark Word 指向 Monitor**，把**对象原有的 MarkWord 存入线程栈中的锁记录**中（轻量级锁部分详解）
-  <img src="https://seazean.oss-cn-beijing.aliyuncs.com/img/Java/JUC-Monitor工作原理1.png" style="zoom:67%;" />
+  <img src="img\JUC-Monitor工作原理1.png" style="zoom:67%;" />
 * 在 Thread-2 上锁的过程，Thread-3、Thread-4、Thread-5 也执行 synchronized(obj)，就会进入 EntryList BLOCKED（双向链表）
 * Thread-2 执行完同步代码块的内容，根据 obj 对象头中 Monitor 地址寻找，设置 Owner 为空，把线程栈的锁记录中的对象头的值设置回 MarkWord
 * 唤醒 EntryList 中等待的线程来竞争锁，竞争是**非公平的**，如果这时有新的线程想要获取锁，可能直接就抢占到了，阻塞队列的线程就会继续阻塞
 * WaitSet 中的 Thread-0，是以前获得过锁，但条件不满足进入 WAITING 状态的线程（wait-notify 机制）
 
-![](https://seazean.oss-cn-beijing.aliyuncs.com/img/Java/JUC-Monitor工作原理2.png)
+![](img\JUC-Monitor工作原理2.png)
+
+
 
 注意：
 
@@ -239,7 +241,7 @@ LocalVariableTable:
 无锁 -> 偏向锁 -> 轻量级锁 -> 重量级锁	// 随着竞争的增加，只能锁升级，不能降级
 ```
 
-![](https://seazean.oss-cn-beijing.aliyuncs.com/img/Java/JUC-锁升级过程.png)
+![](img\JUC-锁升级过程.png)
 
 ### 偏向锁
 
@@ -249,7 +251,7 @@ LocalVariableTable:
 
 * 当有另外一个线程去尝试获取这个锁对象时，偏向状态就宣告结束，此时撤销偏向（Revoke Bias）后恢复到未锁定或轻量级锁状态
 
-<img src="https://seazean.oss-cn-beijing.aliyuncs.com/img/Java/JUC-Monitor-MarkWord结构64位.png" style="zoom: 67%;" />
+<img src="img/JUC-Monitor-MarkWord结构64位.png" style="zoom: 67%;" />
 
 一个对象创建时：
 
@@ -298,19 +300,19 @@ public static void method2() {
 
 * 创建锁记录（Lock Record）对象，每个线程的**栈帧**都会包含一个锁记录的结构，存储锁定对象的 Mark Word
 
-  ![](https://seazean.oss-cn-beijing.aliyuncs.com/img/Java/JUC-轻量级锁原理1.png)
+  ![](img\JUC-轻量级锁原理1.png)
 
 * 让锁记录中 Object reference 指向锁住的对象，并尝试用 CAS 替换 Object 的 Mark Word，将 Mark Word 的值存入锁记录
 
 * 如果 CAS 替换成功，对象头中存储了锁记录地址和状态 00（轻量级锁） ，表示由该线程给对象加锁
-  ![](https://seazean.oss-cn-beijing.aliyuncs.com/img/Java/JUC-轻量级锁原理2.png)
+  ![](img\JUC-轻量级锁原理2.png)
 
 * 如果 CAS 失败，有两种情况：
 
   * 如果是其它线程已经持有了该 Object 的轻量级锁，这时表明有竞争，进入锁膨胀过程
   * 如果是线程自己执行了 synchronized 锁重入，就添加一条 Lock Record 作为重入的计数
 
-  ![](https://seazean.oss-cn-beijing.aliyuncs.com/img/Java/JUC-轻量级锁原理3.png)
+  ![](img\JUC-轻量级锁原理3.png)
 
 * 当退出 synchronized 代码块（解锁时）
 
@@ -325,11 +327,11 @@ public static void method2() {
 
 * 当 Thread-1 进行轻量级加锁时，Thread-0 已经对该对象加了轻量级锁
 
-  ![](https://seazean.oss-cn-beijing.aliyuncs.com/img/Java/JUC-重量级锁原理1.png)
+  ![](img\JUC-重量级锁原理1.png)
 
 * Thread-1 加轻量级锁失败，进入锁膨胀流程：为 Object 对象申请 Monitor 锁，**通过 Object 对象头获取到持锁线程**，将 Monitor 的 Owner 置为 Thread-0，将 Object 的对象头指向重量级锁地址，然后自己进入 Monitor 的 EntryList BLOCKED
 
-  ![](https://seazean.oss-cn-beijing.aliyuncs.com/img/Java/JUC-重量级锁原理2.png)
+  ![](img\JUC-重量级锁原理2.png)
 
 * 当 Thread-0 退出同步块解锁时，使用 CAS 将 Mark Word 的值恢复给对象头失败，这时进入重量级解锁流程，即按照 Monitor 地址找到 Monitor 对象，设置 Owner 为 null，唤醒 EntryList 中 BLOCKED 线程
 
@@ -351,11 +353,11 @@ public static void method2() {
 自旋锁情况：
 
 * 自旋成功的情况：
-      <img src="https://seazean.oss-cn-beijing.aliyuncs.com/img/Java/JUC-自旋成功.png" style="zoom: 80%;" />
+      <img src="img\JUC-自旋成功.png" style="zoom: 80%;" />
 
 * 自旋失败的情况：
 
-  <img src="https://seazean.oss-cn-beijing.aliyuncs.com/img/Java/JUC-自旋失败.png" style="zoom:80%;" />
+  <img src="img\JUC-自旋失败.png" style="zoom:80%;" />
 
 自旋锁说明：
 
