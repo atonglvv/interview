@@ -9,3 +9,4 @@
 *.iml
 *.xml
 /.idea
+*.DS_Store
