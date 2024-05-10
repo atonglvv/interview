@@ -41,8 +41,7 @@ class ServiceB {
     2.6: 绑定conn资源到 TransactionSync...Manager#resources，key：datasource
 3. 执行事务增强器后面的增强器..
 4. 最后一个advice调用 target的目标方法 a() 方法
-    4.1: 假设target a方法 需要访问数据库 执行SQL 的话，程序需要获取一个 conn 资源，到哪拿？ DataSourceUtils.getConnection(datasource) 这一步最终会拿到 事务增强器 前置增强逻辑 存放在 TransactionSync..Manager#resources 内的
-    conn 资源
+    4.1: 假设target a方法 需要访问数据库 执行SQL 的话，程序需要获取一个 conn 资源，到哪拿？ DataSourceUtils.getConnection(datasource) 这一步最终会拿到 事务增强器 前置增强逻辑 存放在 TransactionSync..Manager#resources 内的conn 资源
     4.2: 执行方法a逻辑...可能会执行一些 SQL 语句...
 5. 线程执行到这样一行代码：serviceB.b()
 6. serviceB 它是一个代理对象，因为它也使用了 @Transactional 注解了，Spring 会为它创建代理的。
@@ -53,8 +52,7 @@ class ServiceB {
     7.4: 检查事务注解属性，发现自己打的propagation == REQUIRED，所以继续共享 conn 数据库链接资源
 8. 执行事务增强器后面的增强器..
 9. 最后一个device调用 target (serviceB)的目标方法 b() 方法
-    9.1: 假设target b方法 需要访问数据库 执行SQL 的话，程序需要获取一个 conn 资源，到哪拿？ DataSourceUtils.getConnection(datasource) 这一步最终会拿到 代理serviceA对象存放在 TransactionSync..Manager#resources 内的
-    conn 资源
+    9.1: 假设target b方法 需要访问数据库 执行SQL 的话，程序需要获取一个 conn 资源，到哪拿？ DataSourceUtils.getConnection(datasource) 这一步最终会拿到 代理serviceA对象存放在 TransactionSync..Manager#resources 内的conn 资源
     9.2: 执行方法b逻辑...可能会执行一些 SQL 语句...
 10. 线程继续执行 事务增强器 环绕增强的后置逻辑 （代理serviceB.b() 方法的 后置增强）
      10.1: 检查发现，serviceB.b() 事务并不是 当前 b方法开启的，所以 基本不做什么事情..

@@ -87,9 +87,9 @@ class AspectJAutoProxyRegistrar implements ImportBeanDefinitionRegistrar {
 }
 ```
 
-可以看到这里`@import`就是作用就是将`AnnotationAwareAspectJAutoProxyCreator`注册到容器当中，**这个类是Spring AOP的关键**。
+可以看到这里`@import`作用就是将`AnnotationAwareAspectJAutoProxyCreator`注册到容器当中，**这个类是Spring AOP的关键**。
 
-![](D:\ainterview\interview\spring\img\aop01.png)从上面类图可以看出它本质上是一种`BeanPostProcessor`。所以它的执行是在完成原始 Bean 构建后的初始化Bean（initializeBean）过程中进行代理对象生成的，最终放到`Spring`容器中，我们可以看下它的postProcessAfterInitialization 方法，该方法在其上级父类中`AbstractAutoProxyCreator`实现的：
+![](img\aop01.png)从上面类图可以看出它本质上是一种`BeanPostProcessor`。所以它的执行是在完成原始 Bean 构建后的初始化Bean（initializeBean)过程中进行代理对象生成的，最终放到`Spring`容器中，我们可以看下它的postProcessAfterInitialization 方法，该方法在其上级父类中`AbstractAutoProxyCreator`实现的：
 
 ```java
 /**
@@ -109,7 +109,7 @@ public Object postProcessAfterInitialization(@Nullable Object bean, String beanN
 }
 ```
 
-可以看到只有当`earlyProxyReferences`集合中不存在`cacheKey`的时候，才会执行`wrapIfNecessary`方法。Spring AOP对象生成的时机有两个：一个是提前AOP，提前AOP的对象会被放入到`earlyProxyReferences`集合当中，Spring循环依赖解决方案中如果某个bean有循环依赖，同时需要代理增强，那么就会提前生成aop代理对象放入`earlyProxyReferences`中，若没有提前，AOP会在Bean的生命周期的最后执行`postProcessAfterInitialization`的时候进行AOP动态代理。
+可以看到只有当`earlyProxyReferences`集合中不存在`cacheKey`的时候，才会执行`wrapIfNecessary`方法。**Spring AOP对象生成的时机有两个：一个是提前AOP，提前AOP的对象会被放入到`earlyProxyReferences`集合当中，Spring循环依赖解决方案中如果某个bean有循环依赖，同时需要代理增强，那么就会提前生成aop代理对象放入`earlyProxyReferences`中，若没有提前，AOP会在Bean的生命周期的最后执行`postProcessAfterInitialization`的时候进行AOP动态代理。**
 
 进入`#wrapIfNecessary()`方法，核心逻辑：
 
@@ -184,7 +184,7 @@ protected Object createProxy(Class<?> beanClass, @Nullable String beanName,
 }
 ```
 
-\#proxyFactory.getProxy(getProxyClassLoader())
+`#proxyFactory.getProxy(getProxyClassLoader())`
 
 ```java
 public Object getProxy(@Nullable ClassLoader classLoader) {
@@ -192,7 +192,7 @@ public Object getProxy(@Nullable ClassLoader classLoader) {
 }
 ```
 
-\#createAopProxy()
+`#createAopProxy()`
 
 ```java
 @Override
@@ -321,7 +321,7 @@ public Object invoke(Object proxy, Method method, Object[] args) throws Throwabl
 
 # aop相关问题
 
-## @AfterReturning、@After以及AfterThrowing的区别
+## @AfterReturning、@After以及@AfterThrowing的区别
 
 ```java
 /*

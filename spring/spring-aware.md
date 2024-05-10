@@ -400,7 +400,7 @@ public void refresh() throws BeansException, IllegalStateException {
 }
 ```
 
-接着 prepareBeanFactory(beanFactory) 往下看：
+接着 prepareBeanFactory(beanFactory) 往下看(注意看: new ApplicationContextAwareProcessor(this))：
 
 ```java
 
@@ -460,7 +460,7 @@ protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 }
 ```
 
-**看一眼 ApplicationContextAwareProcessor** 这个类：
+**看一眼 ApplicationContextAwareProcessor** 这个类（注意看: postProcessBeforeInitialization）：
 
 ```java
 
