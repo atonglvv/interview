@@ -91,7 +91,7 @@ public @interface AutoConfigurationPackage {
 
 瞅一眼 AutoConfigurationImportSelector.class 的 uml类图：
 
-![AutoConfigurationImportSelector](\img\AutoConfigurationImportSelector.png)可以看到，它实现了 ImportSelector 接口。
+![AutoConfigurationImportSelector](img\AutoConfigurationImportSelector.png)可以看到，它实现了 ImportSelector 接口。
 
 让我们来看一下**AutoConfigurationImportSelector** 里 **selectImports** 方法。
 
