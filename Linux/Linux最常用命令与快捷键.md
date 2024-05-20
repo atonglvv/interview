@@ -79,15 +79,6 @@ cat openfire.xml
 cat -n openfire.xml
 ```
 
-## more
-
-一页一页地显示文件内容，后跟文件名称 【**空格键**向下翻页，**Enter键**向下滚动一行，**Q键**退出】
-
-``` shell
-# 通过more命令查看openfire.xml
-more openfire.xml
-```
-
 ## head
 
 显示文件的开头。 -n参数：指定显示的行数
@@ -108,7 +99,18 @@ tail -3 openfire.xml
 
 ### tail -f 
 
+## more
+
+一页一页地显示文件内容，后跟文件名称 【**空格键**向下翻页，**Enter键**向下滚动一行，**Q键**退出】
+
+``` shell
+# 通过more命令查看openfire.xml
+more openfire.xml
+```
+
 ## less
+
+
 
 # 文件查找
 
