@@ -45,7 +45,7 @@ MySQL中的锁，按照锁的粒度分，分为以下三类:
 
 **解决方案：**
 
-在InnoDB引擎中，我们可以在备份时加上参数 --single-transaction 参数来完成不加锁的一致性数据备份：
+在InnoDB引擎中，我们可以在备份时加上参数` --single-transaction` 参数来完成不加锁的一致性数据备份：
 
 ```sql
  mysqldump --single-transaction -uroot –p1234 itcast > itcast.sql
