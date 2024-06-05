@@ -1,4 +1,4 @@
-Kafka]中采用了多副本的机制， 这是大多数分布式系统中惯用的手法， 以此来实现水平扩展、提供容灾能力、提升可用性和可靠性等。
+Kafka中采用了多副本的机制， 这是大多数分布式系统中惯用的手法， 以此来实现水平扩展、提供容灾能力、提升可用性和可靠性等。
 
 # 副本剖析
 
@@ -23,15 +23,15 @@ bin/kafka-topics.sh --zookeeper localhost:2181/kafka --describe --top topic-part
 
 上面的示例中返回为空，紧接着我们将集群中的 brokerld为2的节点关闭，再来执行同样的命令， 结果显示如下：
 
-![](C:\Document\Github\interview\MQ\Kafka\img\失效副本01.png)	
+![](img\失效副本01.png)	
 
 可以看到主题topic-partitions中的三个分区都为under-replicated分区， 因为它们都有副本处于下线状态，即处于功能失效状态。
 
-前面提及失效副本不仅是指处于功能失效状态的副本，处于同步失效状态的副本也可以看作失效副。
+前面提及失效副本不仅是指处于功能失效状态的副本，处于同步失效状态的副本也可以看作失效副本。
 
 怎么判定一个分区是否有副本处于同步失效的状态呢?  Kafka从0.9.x版本开始就通过唯一的broker端参数replica.lag.time.max.ms来抉择，当ISR集合中的一个follower副本滞后leader副本的时间超过此参数指定的值时则判定为同步失败，需要将此follower副本剔除出ISR集合，具体可以参考下图。replica.lag.time.max.ms参数的默认值为10000。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\失效副本02.png)	
+![](img\失效副本02.png)
 
 具体的实现原理也很容易理解，**当follower副本将leader副本LEO(Log End Offset) 之前的日志全部同步时**， 则认为该follower副本已经追赶上leader副本， 此时**更新该副本的lastCaughtUpTimeMs标识**。
 
@@ -84,7 +84,7 @@ Kafka在启动的时候会开启两个与ISR相关的定时任务， 名称分�
 
 如下图所示， leader副本的LEO为9， follower1副本的LEO为7 而follower2副本的LEO为6， 如果判定这3个副本都处于ISR集合中， 那么这个分区的HW为6；如果follower3 已经被判定为失效副本被剥离出ISR集合， 那么此时分区的HW为leader副本和follower1副本中LEO的最小值， 即为7。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\ISR的伸缩01.png)	
+![](img\ISR的伸缩01.png)
 
 冷门知识：很多读者对Kafka中的HW的概念并不陌生， 但是却并不知道还有一个LW的概念。LW是Low Watermark的缩写，俗称“低水位”，代表AR集合中最小的logStartOffset值。副本的拉取请求(FetchRequest，它有可能触发新建日志分段而旧的被清理， 进而导致logStartOffset的增加)和删除消息请求(DeleteRecordRequest) 都有可能促使LW的增长。
 
@@ -99,23 +99,23 @@ Kafka在启动的时候会开启两个与ISR相关的定时任务， 名称分�
 5. leader副本所在的服务器将拉取结果返回给follower副本。
 6. follower副本收到leader副本返回的拉取结果， 将消息追加到本地日志中， 并更新日志的偏移量信息。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\LEO与HW01.png)	
+![](img\LEO与HW01.png)
 
 了解了这些内容后，我们再来分析在这个过程中各个副本LEO和HW的变化情况。下面的示例采用同图8-3中相同的环境背景， 如图8-4所示， 生产者一直在往leader副本(带阴影的方框) 中写入消息。某一时刻， leader副本的LEO增加至5， 并且所有副本的HW还都为0。之后follower副本(不带阴影的方框) 向leader副本拉取消息， 在拉取的请求中会带有自身的LEO信息， 这个LEO信息对应的是FetchRequest请求中的fetch_offset。leader副本返回给follower副本相应的消息， 并且还带有自身的HW信息， 如图8-5所示， 这个HW信息对应的是FetchResponse中的high_watermark。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\LEO与HW02.png)	
+![](img\LEO与HW02.png)	
 
 接下来follower副本再次请求拉取leader副本中的消息， 如图8-6所示。
 
 此时leader副本收到来自follower副本的FetchRequest请求， 其中带有LEO的相关信息，选取其中的最小值作为新的HW，即min(15,3,4) =3。然后连同消息和HW一起返回FetchResponse给follower副本， 如图8-7所示。注意leader副本的HW是一个很重要的东西， 因为它直接影响了分区数据对消费者的可见性。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\LEO与HW03.png)	
+![](img\LEO与HW03.png)	
 
 两个follower副本在收到新的消息之后更新LEO并且更新自己的HW为3(min(LEO,3) =3) 。
 
 在一个分区中， leader副本所在的节点会记录所有副本的LEO， 而follower副本所在的节点只会记录自身的LEO， 而不会记录其他副本的LEO。对HW而言， 各个副本所在的节点都只记录它自身的HW。变更图8-3， 使其带有相应的LEO和HW信息， 如图8-8所示。leader副本中带有其他follower副本的LEO， 那么它们是什么时候更新的呢?leader副本收到follower副本的FetchRequest请求之后， 它首先会从自己的日志文件中读取数据， 然后在返回给follower副本数据前先更新follower副本的LEO。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\LEO与HW04.png)	
+![](img\LEO与HW04.png)
 
 Kafka的根目录下有cleaner-offset-checkpoint、log-start-offset-checkpoint、recovery-point-offset-checkpoint和replication-offset-checkpoint四个检查点文件。
 
@@ -129,25 +129,25 @@ log-start-offset-checkpoint文件对应logStartOffset(注意不能缩写为LSO�
 
 首先我们来看一下数据丢失的问题， 如图8-9所示， ReplicaＢ是当前的leader副本(用L标记) ， Replica A是follower副本。参照8.1.3节中的图8-4至图8-7的过程来进行分析：在某一时刻， B中有2条消息m1和m 2， A从B中同步了这两条消息， 此时A和B的LEO都为2，同时HW都为1； 之后A再向B中发送请求以拉取消息， FetchRequest请求中带上了A的LEO信息，B在收到请求之后更新了自己的HW为2；B中虽然没有更多的消息，但还是在延时一段时间之后(参考6.3节中的延时拉取) 返回FetchResponse， 并在其中包含了HW信息； 最后A根据FetchResponse中的HW信息更新自己的HW为2。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\LeaderEpoch的介入01.png)	
+![](img\LeaderEpoch的介入01.png)
 
 可以看到整个过程中两者之间的HW同步有一个间隙， 在Ａ写入消息m2之后(LEO更新为2) 需要再一轮的FetchRequest/FetchResponse才能更新自身的HW为2。如图8-10所示， 如果在这个时候A宕机了，那么在A重启之后会根据之前HW位置(这个值会存入本地的复制点文件replication-offset-checkpoint) 进行日志截断， 这样便会将m2这条消息删除， 此时Ａ只剩下m1这一条消息， 之后A再向B发送FetchRequest请求拉取消息。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\LeaderEpoch的介入02.png)	
+![](img\LeaderEpoch的介入02.png)
 
 此时若B再宕机， 那么A就会被选举为新的leader， 如图8-11所示。B恢复之后会成为follower， 由于follower副本HW不能比leader副本的HW高， 所以还会做一次日志截断， 以此将HW调整为1。这样一来m2这条消息就丢失了(就算B不能恢复，这条消息也同样丢失)。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\LeaderEpoch的介入03.png)	
+![](img\LeaderEpoch的介入03.png)
 
 对于这种情况，也有一些解决方法，比如等待所有follower副本都更新完自身的HW之后再更新leader副本的HW， 这样会增加多一轮的FetchRequest/FetchResponse延迟， 自然不够妥当。还有一种方法就是follower副本恢复之后， 在收到leader副本的FetchResponse前不要截断follower副本(follower副本恢复之后会做两件事情：截断自身和向leader发送Fetch Request请求)，不过这样也避免不了数据不一致的问题。
 
 如图8-12所示，当前leader副本为A， follower副本为B， A中有2条消息m1和m2， 并且HW和LEO都为2， B中有1条消息m1， 并且HW和LEO都为1.假设A和B同时“挂掉”，然后B第一个恢复过来并成为leader， 如图8-13所示。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\LeaderEpoch的介入04.png)	
+![](img\LeaderEpoch的介入04.png)
 
 之后Ｂ写入消息m3， 并将LEO和HW更新至2(假设所有场景中的min.insync.replicas参数配置为1) 。此时Ａ也恢复过来了， 根据前面数据丢失场景中的介绍可知它会被赋予follower的角色， 并且需要根据HW截断日志及发送FetchRequest至B， 不过此时A的HW正好也为2，那么就可以不做任何调整了，如图8-14所示。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\LeaderEpoch的介入05.png)	
+![](img\LeaderEpoch的介入05.png)
 
 如此一来A中保留了m2而Ｂ中没有，Ｂ中新增了m3而Ａ也同步不到，这样A和B就出现了数据不一致的情形。
 
@@ -155,31 +155,31 @@ log-start-offset-checkpoint文件对应logStartOffset(注意不能缩写为LSO�
 
 下面我们再来看一下引入leader epoch之后如何应付前面所说的数据丢失和数据不一致的场景。首先讲述应对数据丢失的问题， 如图8-15所示， 这里只比图8-9中多了LE(Leader Epoch的缩写，当前Ａ和Ｂ中的LE都为0)。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\LeaderEpoch的介入06.png)	
+![](img\LeaderEpoch的介入06.png)
 
 同样A发生重启， 之后Ａ不是先忙着截断日志而是先发送OffsetsForLeaderEpochRequest请求给B(OffsetsForLeaderEpochRequest请求体结构如图8-16所示， 其中包含A当前的Leader Epoch值) ， B作为目前的leader在收到请求之后会返回当前的LEO(Log End Offset， 注意图中LE0和LEO的不同) ， 与请求对应的响应为OffsetsForLeaderEpochResponse， 对应的响应体结构可以参考图8-17，整个过程可以参考图8-18。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\LeaderEpoch的介入07.png)	
+![](img\LeaderEpoch的介入07.png)
 
 如果A中的LeaderEpoch(假设为LE_A) 和Ｂ中的不相同， 那么Ｂ此时会查找LeaderEpoch为LEA+1对应的StartOffset并返回给A， 也就是LEA对应的LEO， 所以我们可以将OffsetsForLeaderEpochRequest的请求看作用来查找follower副本当前LeaderEpoch的LEO。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\LeaderEpoch的介入08.png)	
+![](img\LeaderEpoch的介入08.png)
 
 如图8-18所示， A在收到2之后发现和目前的LEO相同， 也就不需要截断日志了。之后同图8-11所示的一样， Ｂ发生了宕机， A成为新的leader， 那么对应的LE=0也变成了LE=1，对应的消息m2此时就得到了保留，这是原本图8-11中所不能的，如图8-19所示。之后不管B有没有恢复， 后续的消息都可以以LE1为LeaderEpoch陆续追加到A中。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\LeaderEpoch的介入09.png)	
+![](img\LeaderEpoch的介入09.png)
 
 下面我们再来看一下leader epoch如何应对数据不一致的场景。如图8-20所示， 当前A为leader， B为follower， A中有2条消息m1和m 2， 而Ｂ中有1条消息m1。假设A和B同时“挂掉”， 然后Ｂ第一个恢复过来并成为新的leader。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\LeaderEpoch的介入10.png)	
+![](img\LeaderEpoch的介入10.png)
 
 之后Ｂ写入消息m3， 并将LEO和HW更新至2， 如图8-21所示。注意此时的LeaderEpoch已经从LE0增至LE1了。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\LeaderEpoch的介入11.png)	
+![](img\LeaderEpoch的介入11.png)
 
 紧接着Ａ也恢复过来成为follower并向B发送OffsetsForLeaderEpochRequest请求， 此时Ａ的LeaderEpoch为LE0。B根据LE0查询到对应的offset为1并返回给A， A就截断日志并删除了消息m2， 如图8-22所示。之后A发送FetchRequest至B请求来同步数据， 最终A和B中都有两条消息m1和m3， HW和LEO都为2， 并且Leader Epoch都为LE1， 如此便解决了数据不一致的问题。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\LeaderEpoch的介入12.png)	
+![](img\LeaderEpoch的介入12.png)
 
 ## 为什么不支持读写分离
 
@@ -190,11 +190,11 @@ log-start-offset-checkpoint文件对应logStartOffset(注意不能缩写为LSO�
 (1) 数据一致性问题。
 (2) 延时问题。类似Redis这种组件， 数据从写入主节点到同步至从节点中的过程需要经历网络→主节点内存→网络→从节点内存这几个阶段， 整个过程会耗费一定的时间。而在Kafka中， 主从同步会比Redis更加耗时， 它需要经历网络→主节点内存→主节点磁盘→网络→从节点内存→从节点磁盘这几个阶段。对延时敏感的应用而言，主写从读的功能并不太适用。
 
-现实情况下，很多应用既可以忍受一定程度上的延时，也可以忍受一段时间内的数据不一致的情况， 那么对于这种情况， Kafka是否有必要支持主写从读的功能呢?
+现实情况下，很多应用既可以忍受一定程度上的延时，也可以忍受一段时间内的数据不一致的情况， 那么对于这种情况， Kafka是否有必要支持主写从读的功能呢？
 
 主读从写可以均摊一定的负载却不能做到完全的负载均衡，比如对于数据写压力很大而读压力很小的情况， 从节点只能分摊很少的负载压力， 而绝大多数压力还是在主节点上。而在Kafka中却可以达到很大程度上的负载均衡，而且这种均衡是在主写主读的架构上实现的。我们来看一下Kafka的生产消费模型， 如图8-23所示。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\为什么不支持读写分离01.png)	
+![](img\为什么不支持读写分离01.png)
 
 如图8-23 所示，在Kafka 集群中有3个分区，每个分区有3个副本，正好均匀地分布在3个broker上， 灰色阴影的代表leader副本， 非灰色阴影的代表follower副本， 虚线表示follower副本从leader副本上拉取消息。当生产者写入消息的时候都写入leader副本， 对于图8-23中的情形， 每个broker都有消息从生产者流入； 当消费者读取消息的时候也是从leader副本中读取的， 对于图8-23中的情形， 每个broker都有消息流出到消费者。
 
@@ -237,14 +237,14 @@ log-start-offset-checkpoint文件对应logStartOffset(注意不能缩写为LSO�
 仅依靠副本数来支撑可靠性是远远不够的，大多数人还会想到生产者客户端参数 acks。在2.3 节中我们就介绍过这个参数：相比于 acks = -1 （客户端还可以配置为all ，它的含义与-1 一样，以下只以-1 来进行陈述)可以最大程度地提高消息的可靠性。
 
 对于 acks = 1的配置，生产者将消息发送到 leader 副本， leader 副本在成功写入本地日志之后会告知生产者己经成功提交，如图 8-24 所示 如果此时 ISR 集合的 follower 副本还没来得及拉取到 leader 中新写入的消息， leader 就看机了，那么此次发迭的消息就会丢失。
-![](C:\Document\Github\interview\MQ\Kafka\img\可靠性分析01.png)		
+![](img\可靠性分析01.png)
 对于 ack = -1配置，生产者将消息发送到 leader 副本， leader 副本在成功写入本地日志之后还要等待 ISR 中的 follower 副本全部同步完成才能够告知生产者已经成功提交，即使此时leader 副本宕机，消息也不会丢失，如图 8-25 所示。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\可靠性分析02.png)	
+![](img\可靠性分析02.png)
 
 同样对于 acks = -1的配 ，如果在消息成功写入 leader 副本之后，并且在被 ISR 中的所有副本同步之前 leader 副本宕机了，那么生产者会收到异常以此告知此次发送失败，如图 8-26 所示。
 
-![](C:\Document\Github\interview\MQ\Kafka\img\可靠性分析03.png)	
+![](img\可靠性分析03.png)
 
 在2.1.2节中，我们讨论了消息发送的3种模式，即发后即忘、同步和异步。对于发后即忘的模式，不管消息有没有被成功写入，生产者都不会收到通知，那么即使消息写入失败也无从得知，因此发后即忘的模式不适合高可靠性要求的场景。如果要提升可靠性，那么生产者可以采用同步或异步的模式，在出现异常情况时可以及时获得通知，以便可以做相应的补救措施，比如选择重试发送(可能会引起消息重复)。
 
@@ -264,30 +264,6 @@ log-start-offset-checkpoint文件对应logStartOffset(注意不能缩写为LSO�
 enable.auto.commit参数的默认值为true， 即开启自动位移提交的功能， 虽然这种方式非常简便，但它会带来重复消费和消息丢失的问题，对于高可靠性要求的应用来说显然不可取，所以需要将enable.auto.commit参数设置为false来执行手动位移提交。在执行手动位移提交的时候也要遵循一个原则：如果消息没有被成功消费，那么就不能提交所对应的消费位移。对于高可靠要求的应用来说，宁愿重复消费也不应该因为消费异常而导致消息丢失。有时候，由于应用解析消息的异常，可能导致部分消息一直不能够成功被消费，那么这个时候为了不影响整体消费的进度，可以将这类消息暂存到死信队列(查看11.3节)中，以便后续的故障排除。
 
 对于消费端， Kafka还提供了一个可以兜底的功能， 即回溯消费， 通过这个功能可以让我们能够有机会对漏掉的消息相应地进行回补，进而可以进一步提高可靠性。
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

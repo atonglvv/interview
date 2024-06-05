@@ -15,7 +15,6 @@
 
 ```shell
 docker run -d -e TZ="Asia/Shanghai" -p 2181:2181 -v /usr/local/zookeeper:/data --name zookeeper --restart always zookeeper
-
 ```
 
 # 参数解释
