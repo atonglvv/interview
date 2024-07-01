@@ -325,7 +325,7 @@ public void channelActive(ChannelHandlerContext ctx) throws Exception {
 }
 ```
 
-### 预设长度
+### 预设长度（消息长度+消息内容）
 
 将消息分为消息头和消息体，消息头中保存消息体长度的字段。在解析时，先读取内容长度Length，其值为实际消息体内容占用的字节数，之后必须读取到这么多字节的内容，才认为是一个完整的数据报文。
 
