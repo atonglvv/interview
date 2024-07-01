@@ -75,7 +75,7 @@ TCP链接在三次握手的时候，会将自己的**窗口大小**(window size)
 
 如果 MSS + TCP 首部 + IP 首部 > MTU，那么数据包将会被拆分为多个发送。这就是拆包现象。
 
-![image.png](img\netty粘包拆包002.png)
+![image.png](img/netty粘包拆包002.png)
 
 linux服务器上输入ifconfig命令，可以查看不同网卡的MTU大小，如下：
 
