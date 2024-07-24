@@ -76,7 +76,7 @@ tx1 先开始，开启本地事务，拿到本地锁，更新操作 m = 1000 - 1
 
 tx2 后开始，开启本地事务，拿到本地锁，更新操作 m = 900 - 100 = 800。本地事务提交前，尝试拿该记录的 全局锁 ，tx1 全局提交前，该记录的全局锁被 tx1 持有，tx2 需要重试等待全局锁 。
 
-![图片](https://mmbiz.qpic.cn/mmbiz_png/fEsWkVrSk55YAlRtTEtGAGxXVkibbib0LZlwdktKXCYiawPTwPSESfTY44gOutmTTGItVmKL6Y15nlq0ywjETDia8g/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1)
+![图片](img\seata001.png)
 
 可以看到 tx2 的修改被阻塞了，之后重试拿到全局锁之后就能提交然后释放本地锁。
 
@@ -86,7 +86,7 @@ tx2 后开始，开启本地事务，拿到本地锁，更新操作 m = 900 - 10
 
 **因为整个过程全局锁在 tx1 结束前一直是被 tx1 持有的，所以不会发生脏写的问题**。
 
-![图片](https://mmbiz.qpic.cn/mmbiz_png/fEsWkVrSk55YAlRtTEtGAGxXVkibbib0LZv7qhxd6gSjZicgRswnLNiack6Y0mpSllZaAZGNyxZBDVWP2MZNEQFqNQ/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1)
+![图片](img\seata002.png)
 
 然后 **AT 模式默认全局是读未提交的隔离级别**，如果应用在特定场景下，必需要求全局的读已提交 ，可以通过 SELECT FOR UPDATE 语句的代理。
 
@@ -108,7 +108,7 @@ tx2 后开始，开启本地事务，拿到本地锁，更新操作 m = 900 - 10
 
 我贴一张官网的图应该挺清晰了。
 
-![图片](https://mmbiz.qpic.cn/mmbiz_png/fEsWkVrSk55YAlRtTEtGAGxXVkibbib0LZWwTP3IYskxIFshqoXywjj9F2t0Wr2EL2oK4kahVw8xsH1licnjyZnhA/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1)
+![图片](img\seata003.png)
 
 ### Saga 模式
 
@@ -118,7 +118,7 @@ tx2 后开始，开启本地事务，拿到本地锁，更新操作 m = 900 - 10
 
 那 Saga 如何做呢？来看下这个图。
 
-![图片](https://mmbiz.qpic.cn/mmbiz_png/fEsWkVrSk55YAlRtTEtGAGxXVkibbib0LZVWEt8ic7sAcS30RtsKwcq5ZwBw9ibjHxHAMHdq7QPnJ7UnaVGgHpIOzg/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1)
+![图片](img\seata004.png)
 
 假设有 N 个操作，直接从 T1 开始就是直接执行提交事务，然后再执行 T2，可以看到就是无锁的直接提交，到 T3 发现执行失败了，然后就进入 Compenstaing 阶段，开始一个一个倒回补偿了。
 
