@@ -8,16 +8,38 @@ docker pull mysql:8.4
 
 # 运行容器
 
+## 8.0
+
+```shell
+docker run \
+--name mysql \
+--privileged=true \
+-d \
+-p 3306:3306 \
+-v ~/soft/mysql/log:/var/log/mysql \
+-v ~/soft/mysql/data:/var/lib/mysql \
+-v ~/soft/mysql/conf:/etc/mysql/conf.d \
+-v ~/soft/mysql/mysql-files:/var/lib/mysql-files \
+-e MYSQL_ROOT_PASSWORD=1230 \
+mysql:8.0
+```
+
+
+
+
+
+## 8.4
+
 ```dockerfile
 docker run \
 --name mysql \
 --privileged=true \
 -d \
 -p 3306:3306 \
--v /Users/atonglv/soft/mysql/log:/var/log/mysql \
--v /Users/atonglv/soft/mysql/data:/var/lib/mysql \
--v /Users/atonglv/soft/mysql/conf:/etc/mysql/conf.d \
--v /Users/atonglv/soft/mysql/mysql-files:/var/lib/mysql-files \
+-v ~/soft/mysql/log:/var/log/mysql \
+-v ~/soft/mysql/data:/var/lib/mysql \
+-v ~/soft/mysql/conf:/etc/mysql/conf.d \
+-v ~/soft/mysql/mysql-files:/var/lib/mysql-files \
 -e MYSQL_ROOT_PASSWORD=1230 \
 mysql:8.4
 ```
@@ -59,8 +81,8 @@ mkdir mysql.conf.d
 
 
 
-```shell
-CREATE USER 'atong'@'%' IDENTIFIED BY '1230';
+```sql
+CREATE USER 'atong'@'%' IDENTIFIED WITH 'mysql_native_password' BY '1230';
 GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'atong'@'%';
 FLUSH PRIVILEGES;
 ```
@@ -72,7 +94,9 @@ FLUSH PRIVILEGES;
 MySQL 8.4默认使用`caching_sha2_password` 插件进行身份验证。需要对验证方式进行修改。修改为`mysql_native_password`。
 
 ```sql
-ALTER USER 'root'@'%' IDENTIFIED WITH 'mysql_native_password' BY '1230';
-ALTER USER 'atong'@'%' IDENTIFIED WITH 'mysql_native_password' BY '1230';
+ALTER USER 'root'@'%' IDENTIFIED WITH 'mysql_native_password' BY '123!@#qwe';
+ALTER USER 'atong'@'%' IDENTIFIED WITH 'mysql_native_password' BY '123!@#qwe';
+ALTER USER 'root'@'localhost' IDENTIFIED WITH 'mysql_native_password' BY '123!@#qwe';
+FLUSH PRIVILEGES;
 ```
 
