@@ -299,3 +299,13 @@ docker rm -f $(docker ps -a -q)
 docker ps -a -q | xargs docker rm
 ```
 
+
+
+# Docker 的网络
+
+当你安装Docker时，它会自动创建三个网络（bridge、host、none）。你可以使用以下命令列出这些网络：
+
+```shell
+docker network ls
+```
+
